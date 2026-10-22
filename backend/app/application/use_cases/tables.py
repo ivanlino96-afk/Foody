@@ -83,9 +83,14 @@ def release_table(uow: UnitOfWork, clock: Clock, table_id: UUID, staff_id: UUID 
 def release_expired_tables(uow: UnitOfWork, clock: Clock, auto_release_minutes: int) -> int:
     cutoff = clock.now() - timedelta(minutes=auto_release_minutes)
     with uow:
-        expired = [t for t in uow.tables.list_by_status(TableStatus.CLOSED) if t.status_changed_at <= cutoff]
-        for candidate in expired:
+        candidates = [t for t in uow.tables.list_by_status(TableStatus.CLOSED) if t.status_changed_at <= cutoff]
+        released = 0
+        for candidate in candidates:
             table = _locked_table(uow, candidate.id)
+            # Re-check under the lock: a waiter may have reopened it since the scan.
+            if table.status != TableStatus.CLOSED or table.status_changed_at > cutoff:
+                continue
             _release(uow, clock, table, ChangeSource.SYSTEM, None)
+            released += 1
         uow.commit()
-        return len(expired)
+        return released

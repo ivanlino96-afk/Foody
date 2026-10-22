@@ -141,3 +141,15 @@ def test_eleventh_order_in_a_minute_is_429(client, opened, taco):
     r = client.post(f"{BASE}/orders", json=order_body(taco))
     assert r.status_code == 429
     assert r.json()["code"] == "rate_limited"
+
+
+def test_nul_in_note_is_422(client, opened, taco):
+    body = order_body(taco)
+    body["lines"][0]["note"] = "sin\u0000sal"
+    r = client.post(f"{BASE}/orders", json=body)
+    assert r.status_code == 422 and r.json()["code"] == "validation_error"
+
+
+def test_malformed_qr_token_is_422(client):
+    r = client.get("/api/v1/diner/tables/abc%00def")
+    assert r.status_code == 422 and r.json()["code"] == "validation_error"

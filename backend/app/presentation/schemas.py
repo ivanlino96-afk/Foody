@@ -17,7 +17,7 @@ class LineIn(BaseModel):
     quantity: int = Field(ge=1, le=50)
     removed_ingredient_ids: list[UUID] = Field(default_factory=list, max_length=30)
     extras: list[ExtraIn] = Field(default_factory=list, max_length=20)
-    note: str | None = Field(None, max_length=200)
+    note: str | None = Field(None, max_length=200, pattern=r"^[^\x00]*$")
 
     def to_request(self) -> LineRequest:
         return LineRequest(self.menu_item_id, self.quantity, tuple(self.removed_ingredient_ids),

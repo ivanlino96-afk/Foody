@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.exc import IntegrityError
 
 from app.application.dto import DinerMenuCategoryView, DinerSessionView, DinerTableView
@@ -10,6 +12,8 @@ from app.presentation.deps import get_clock, get_uow
 from app.presentation.rate_limit import limit_orders
 from app.presentation.schemas import PlacedOrderOut, PlaceOrderIn
 
+QrToken = Annotated[str, Path(pattern=r"^[A-Za-z0-9_-]{1,128}$")]
+
 router = APIRouter(prefix="/diner/tables/{qr_token}", tags=["diner"])
 
 
@@ -19,23 +23,23 @@ def _placed(order: Order) -> PlacedOrderOut:
 
 
 @router.get("")
-def read_table(qr_token: str, uow: UnitOfWork = Depends(get_uow)) -> DinerTableView:
+def read_table(qr_token: QrToken, uow: UnitOfWork = Depends(get_uow)) -> DinerTableView:
     return get_diner_table(uow, qr_token)
 
 
 @router.get("/menu")
-def read_menu(qr_token: str, uow: UnitOfWork = Depends(get_uow)) -> list[DinerMenuCategoryView]:
+def read_menu(qr_token: QrToken, uow: UnitOfWork = Depends(get_uow)) -> list[DinerMenuCategoryView]:
     get_diner_table(uow, qr_token)
     return get_diner_menu(uow)
 
 
 @router.get("/session")
-def read_session(qr_token: str, uow: UnitOfWork = Depends(get_uow)) -> DinerSessionView | None:
+def read_session(qr_token: QrToken, uow: UnitOfWork = Depends(get_uow)) -> DinerSessionView | None:
     return get_diner_session(uow, qr_token)
 
 
 @router.post("/orders", status_code=status.HTTP_201_CREATED, dependencies=[Depends(limit_orders)])
-def create_order(qr_token: str, body: PlaceOrderIn, uow: UnitOfWork = Depends(get_uow),
+def create_order(qr_token: QrToken, body: PlaceOrderIn, uow: UnitOfWork = Depends(get_uow),
                  clock: Clock = Depends(get_clock)) -> PlacedOrderOut:
     cmd = PlaceOrderCommand(qr_token, body.idempotency_key, tuple(line.to_request() for line in body.lines),
                             body.expected_total_cents)

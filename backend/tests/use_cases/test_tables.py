@@ -72,3 +72,29 @@ def test_release_expired_tables_only_after_minutes():
 def test_unknown_table_raises_not_found():
     with pytest.raises(NotFound):
         open_table(InMemoryUnitOfWork(), FixedClock(), uuid4(), STAFF)
+
+
+def test_release_job_skips_table_reopened_after_the_scan():
+    from datetime import timedelta
+
+    from app.application.use_cases import tables as tables_uc
+    from tests.fakes import T0
+
+    uow, clock = InMemoryUnitOfWork(), FixedClock()
+    expired = uow.seed_table(code="M1", status=TableStatus.CLOSED, changed_at=T0 - timedelta(minutes=10))
+    raced = uow.seed_table(code="M2", status=TableStatus.CLOSED, changed_at=T0 - timedelta(minutes=10))
+    real_locked = tables_uc._locked_table
+
+    def locked(u, table_id):
+        table = real_locked(u, table_id)
+        if table_id == raced.id:  # a waiter reopened it between the scan and the lock
+            table.status, table.status_changed_at = TableStatus.OCCUPIED, T0
+        return table
+
+    tables_uc._locked_table = locked
+    try:
+        assert release_expired_tables(uow, clock, 5) == 1
+    finally:
+        tables_uc._locked_table = real_locked
+    assert uow.state.tables[expired.id].status == TableStatus.FREE
+    assert uow.state.tables[raced.id].status == TableStatus.OCCUPIED

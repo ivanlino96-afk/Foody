@@ -16,10 +16,15 @@ _TIMESTAMP_FIELD = {
 
 
 def _transition(uow: UnitOfWork, clock: Clock, order_id: UUID, target: OrderStatus, staff_id: UUID,
-                role: StaffRole) -> Order:
-    order = uow.orders.get_for_update(order_id)
-    if order is None:
+                role: StaffRole, lock_session: bool = False) -> Order:
+    # Lock order is table → session → order everywhere (place_order takes table → session) to avoid deadlocks.
+    peek = uow.orders.get(order_id)
+    if peek is None:
         raise NotFound(details={"order_id": str(order_id)})
+    uow.tables.get_for_update(peek.table_id)
+    if lock_session:
+        uow.sessions.get_for_update(peek.session_id)
+    order = uow.orders.get_for_update(order_id)
     check_order_transition(order.status, target, role)
     now = clock.now()
     uow.history.add_order_change(
@@ -56,7 +61,7 @@ def cancel_order(uow: UnitOfWork, clock: Clock, order_id: UUID, staff_id: UUID, 
     if not reason.strip():
         raise InvalidCustomization("Escribe el motivo de la cancelación", {"field": "reason"})
     with uow:
-        order = _transition(uow, clock, order_id, OrderStatus.CANCELLED, staff_id, role)
+        order = _transition(uow, clock, order_id, OrderStatus.CANCELLED, staff_id, role, lock_session=True)
         order.cancelled_by = staff_id
         order.cancel_reason = reason.strip()
         uow.orders.save(order)

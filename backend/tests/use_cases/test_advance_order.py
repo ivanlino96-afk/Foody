@@ -79,3 +79,32 @@ def test_kitchen_cannot_cancel():
     uow, clock, _, _, [order] = setup()
     with pytest.raises(Forbidden):
         cancel_order(uow, clock, order.id, COOK, R.KITCHEN, "no")
+
+
+def record_locks(uow):
+    """Wraps every get_for_update so a test can assert the lock order (table → session → order)."""
+    seen = []
+    for name in ("tables", "sessions", "orders"):
+        repo = getattr(uow, name)
+        real = repo.get_for_update
+
+        def wrapped(entity_id, _real=real, _name=name):
+            seen.append(_name)
+            return _real(entity_id)
+
+        repo.get_for_update = wrapped
+    return seen
+
+
+def test_cancel_locks_table_then_session_then_order():
+    uow, clock, _, _, [order] = setup()
+    seen = record_locks(uow)
+    cancel_order(uow, clock, order.id, uuid4(), R.WAITER, "Error de captura")
+    assert seen[:3] == ["tables", "sessions", "orders"]
+
+
+def test_advance_locks_table_before_order():
+    uow, clock, _, _, [order] = setup()
+    seen = record_locks(uow)
+    advance_order(uow, clock, order.id, O.PREPARING, uuid4(), R.KITCHEN)
+    assert seen[:2] == ["tables", "orders"]

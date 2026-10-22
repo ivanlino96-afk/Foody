@@ -6,7 +6,7 @@ from app.infrastructure.config import Settings
 from app.infrastructure.db.engine import make_engine
 from app.presentation.errors import register_error_handlers
 from app.presentation.rate_limit import OrderRateLimiter
-from app.presentation.routers import diner
+from app.presentation.routers import diner, kitchen, waiter
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -30,6 +30,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    api.include_router(diner.router)
+    for router in (diner.router, kitchen.router, waiter.router):
+        api.include_router(router)
     app.include_router(api)
     return app

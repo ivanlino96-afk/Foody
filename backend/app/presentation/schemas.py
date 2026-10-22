@@ -1,3 +1,4 @@
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -35,3 +36,24 @@ class PlacedOrderOut(BaseModel):
     round_number: int
     status: OrderStatus
     subtotal_cents: int
+
+
+class KitchenStatusIn(BaseModel):
+    status: Literal[OrderStatus.PREPARING, OrderStatus.READY]
+
+
+class OpenTableIn(BaseModel):
+    guests_count: int | None = Field(None, ge=1, le=50)
+
+
+class SessionOut(BaseModel):
+    session_id: UUID
+
+
+class CancelOrderIn(BaseModel):
+    reason: str = Field(min_length=1, max_length=200)
+
+
+class OrderStatusOut(BaseModel):
+    order_id: UUID
+    status: OrderStatus

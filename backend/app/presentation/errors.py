@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.domain.errors import (
@@ -18,8 +20,14 @@ class Unauthorized(DomainError):
     default_message = "Inicia sesión para continuar"
 
 
+class RateLimited(DomainError):
+    code = "rate_limited"
+    default_message = "Demasiadas órdenes seguidas; espera un momento"
+
+
 STATUS_BY_ERROR: dict[type[DomainError], int] = {
     Unauthorized: 401,
+    RateLimited: 429,
     NotFound: 404,
     TableNotOpen: 403,
     Forbidden: 403,
@@ -45,5 +53,12 @@ async def _domain_error(_: Request, exc: DomainError) -> JSONResponse:
     return JSONResponse(error_body(exc.code, exc.message, exc.details), status_code=_status_for(exc))
 
 
+async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+    errors = jsonable_encoder(exc.errors(), exclude={"input", "ctx", "url"})
+    return JSONResponse(error_body("validation_error", "Revisa los datos enviados", {"errors": errors}),
+                        status_code=422)
+
+
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(DomainError, _domain_error)
+    app.add_exception_handler(RequestValidationError, _validation_error)

@@ -2,13 +2,26 @@ from uuid import UUID, uuid4
 
 from app.application.ports import Clock, UnitOfWork
 from app.application.use_cases.tables import apply_table_event
-from app.domain.entities import Payment
+from app.domain.entities import DiningTable, Payment, TableSession
 from app.domain.enums import ChangeSource, PaymentMethod, PaymentStatus, ServiceCallType, TableEvent
 from app.domain.errors import InvalidCustomization, InvalidTransition, NotFound
 from app.domain.services.billing import apply_payment
 from app.domain.services.table_state_machine import can_order
 
 MANUAL_METHODS = frozenset({PaymentMethod.CASH, PaymentMethod.CARD_TERMINAL})
+
+
+def settle_session(uow: UnitOfWork, clock: Clock, table: DiningTable, session: TableSession,
+                   staff_id: UUID | None) -> None:
+    """Marks the session paid, closes the table and clears every pending alert of the session."""
+    now = clock.now()
+    session.paid_at = now
+    apply_table_event(uow, clock, table, TableEvent.PAID, ChangeSource.PAYMENT, staff_id)
+    for call_type in ServiceCallType:
+        call = uow.service_calls.pending_for_session(session.id, call_type)
+        if call is not None:
+            call.attended_at, call.attended_by = now, staff_id
+            uow.service_calls.save(call)
 
 
 def register_manual_payment(uow: UnitOfWork, clock: Clock, session_id: UUID, method: PaymentMethod,
@@ -33,12 +46,7 @@ def register_manual_payment(uow: UnitOfWork, clock: Clock, session_id: UUID, met
                           now)
         uow.payments.add(payment)
         if settled:
-            session.paid_at = now
-            apply_table_event(uow, clock, table, TableEvent.PAID, ChangeSource.PAYMENT, staff_id)
-            call = uow.service_calls.pending_for_session(session.id, ServiceCallType.REQUEST_BILL)
-            if call is not None:
-                call.attended_at, call.attended_by = now, staff_id
-                uow.service_calls.save(call)
+            settle_session(uow, clock, table, session, staff_id)
         uow.sessions.save(session)
         uow.commit()
         return payment

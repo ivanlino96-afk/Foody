@@ -5,7 +5,7 @@ import pytest
 from app.application.use_cases.advance_order import advance_order, cancel_order
 from app.application.use_cases.payments import register_manual_payment
 from app.application.use_cases.place_order import PlaceOrderCommand, place_order
-from app.application.use_cases.service_calls import request_service_call
+from app.application.use_cases.service_calls import request_bill_by_staff, request_service_call
 from app.application.use_cases.tables import open_table
 from app.domain.enums import ChangeSource, OrderStatus, PaymentMethod, ServiceCallType, StaffRole, TableStatus
 from app.domain.errors import InvalidCustomization, InvalidTransition
@@ -89,3 +89,41 @@ def test_cannot_pay_closed_session():
     pay(uow, clock, session, 10000)
     with pytest.raises(InvalidTransition):
         pay(uow, clock, session, 1)
+
+
+def test_request_bill_on_empty_account_is_rejected():
+    uow, clock = InMemoryUnitOfWork(), FixedClock()
+    table = uow.seed_table(code="M9", qr_token="qr-m9")
+    open_table(uow, clock, table.id, WAITER)
+    with pytest.raises(InvalidTransition):
+        request_service_call(uow, clock, "qr-m9", ServiceCallType.REQUEST_BILL)
+    with pytest.raises(InvalidTransition):
+        request_bill_by_staff(uow, clock, table.id, WAITER)
+    assert uow.state.tables[table.id].status == TableStatus.OCCUPIED
+
+
+def test_cannot_cancel_below_what_was_already_paid():
+    uow, clock, _, session, _ = setup()
+    item = next(iter(uow.state.items.values()))
+    second = place_order(uow, clock, PlaceOrderCommand(QR, uuid4(), (LineRequest(item.id, 1),), None))
+    pay(uow, clock, session, 15000)
+    with pytest.raises(InvalidTransition):
+        cancel_order(uow, clock, second.id, WAITER, StaffRole.WAITER, "tarde")
+    assert uow.state.sessions[session.id].subtotal_cents == 20000
+
+
+def test_cancel_that_leaves_nothing_to_pay_closes_the_table():
+    uow, clock, table, session, _ = setup()
+    item = next(iter(uow.state.items.values()))
+    second = place_order(uow, clock, PlaceOrderCommand(QR, uuid4(), (LineRequest(item.id, 1),), None))
+    pay(uow, clock, session, 10000)
+    cancel_order(uow, clock, second.id, WAITER, StaffRole.WAITER, "no llegó")
+    assert uow.state.tables[table.id].status == TableStatus.CLOSED
+    assert uow.state.sessions[session.id].paid_at == clock.now()
+
+
+def test_settling_attends_every_pending_call():
+    uow, clock, _, session, _ = setup()
+    request_service_call(uow, clock, QR, ServiceCallType.CALL_WAITER)
+    pay(uow, clock, session, 10000)
+    assert all(c.attended_at is not None for c in uow.state.service_calls.values())

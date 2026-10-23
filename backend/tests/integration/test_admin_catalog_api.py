@@ -97,3 +97,18 @@ def test_qr_png_encodes_public_url(api, admin_headers):
 def test_non_admin_gets_403(api):
     r = api.get(f"{A}/menu-items", headers=staff_headers(WAITER_ID))
     assert r.status_code == 403
+
+
+def test_deleted_names_and_codes_can_be_reused(api, admin_headers):
+    first = api.post(f"{A}/ingredients", json={"name": "zz Comino"}, headers=admin_headers).json()
+    assert api.delete(f"{A}/ingredients/{first['id']}", headers=admin_headers).status_code == 204
+    assert api.post(f"{A}/ingredients", json={"name": "zz Comino"}, headers=admin_headers).status_code == 201
+    table = api.post(f"{A}/tables", json={"code": "ZZ9"}, headers=admin_headers).json()
+    assert api.delete(f"{A}/tables/{table['id']}", headers=admin_headers).status_code == 204
+    assert api.post(f"{A}/tables", json={"code": "ZZ9"}, headers=admin_headers).status_code == 201
+
+
+def test_patch_with_explicit_null_is_422(api, admin_headers):
+    cat = api.post(f"{A}/categories", json={"name": "zz Nulos"}, headers=admin_headers).json()
+    r = api.patch(f"{A}/categories/{cat['id']}", json={"name": None}, headers=admin_headers)
+    assert r.status_code == 422, r.text

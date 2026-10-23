@@ -22,6 +22,11 @@ def setup(open_: bool = True):
     return uow, clock, table
 
 
+def order_something(uow, clock):
+    item = uow.seed_item(make_item())
+    place_order(uow, clock, PlaceOrderCommand(QR, uuid4(), (LineRequest(item.id, 1),), None))
+
+
 def test_call_waiter_creates_pending_call():
     uow, clock, table = setup()
     call = request_service_call(uow, clock, QR, ServiceCallType.CALL_WAITER)
@@ -32,6 +37,7 @@ def test_call_waiter_creates_pending_call():
 
 def test_request_bill_moves_table_to_bill_requested():
     uow, clock, table = setup()
+    order_something(uow, clock)
     request_service_call(uow, clock, QR, ServiceCallType.REQUEST_BILL)
     saved = uow.state.tables[table.id]
     assert saved.status == TableStatus.BILL_REQUESTED
@@ -42,6 +48,7 @@ def test_request_bill_moves_table_to_bill_requested():
 
 def test_request_bill_twice_keeps_one_call():
     uow, clock, _ = setup()
+    order_something(uow, clock)
     first = request_service_call(uow, clock, QR, ServiceCallType.REQUEST_BILL)
     changes = len(uow.state.table_history)
     second = request_service_call(uow, clock, QR, ServiceCallType.REQUEST_BILL)
@@ -67,6 +74,7 @@ def test_attend_twice_is_invalid_transition():
 
 def test_session_view_reports_bill_and_calls():
     uow, clock, _ = setup()
+    order_something(uow, clock)
     request_service_call(uow, clock, QR, ServiceCallType.CALL_WAITER)
     view = get_diner_session(uow, QR)
     assert view.bill_requested is False and view.pending_calls == ["call_waiter"]
@@ -77,6 +85,7 @@ def test_session_view_reports_bill_and_calls():
 
 def test_ordering_blocked_after_bill_requested():
     uow, clock, _ = setup()
+    order_something(uow, clock)
     taco = uow.seed_item(make_item())
     request_service_call(uow, clock, QR, ServiceCallType.REQUEST_BILL)
     with pytest.raises(TableNotOpen):

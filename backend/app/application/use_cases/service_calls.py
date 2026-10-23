@@ -3,12 +3,18 @@ from uuid import UUID, uuid4
 from app.application.dto import ServiceCallView
 from app.application.ports import Clock, UnitOfWork
 from app.application.use_cases.tables import apply_table_event
-from app.domain.entities import ServiceCall
+from app.domain.entities import ServiceCall, TableSession
 from app.domain.enums import ChangeSource, ServiceCallType, TableEvent, TableStatus
 from app.domain.errors import InvalidTransition, NotFound, TableNotOpen
 from app.domain.services.table_state_machine import can_order
 
 _OPEN = frozenset({TableStatus.OCCUPIED, TableStatus.AWAITING_ORDER, TableStatus.SERVED, TableStatus.BILL_REQUESTED})
+
+
+def _require_something_to_charge(session: TableSession) -> None:
+    # A bill of zero could never be paid, leaving the table stuck in bill_requested.
+    if session.subtotal_cents <= 0:
+        raise InvalidTransition("Aún no hay nada que cobrar", {"session_id": str(session.id)})
 
 
 def request_service_call(uow: UnitOfWork, clock: Clock, qr_token: str, call_type: ServiceCallType) -> ServiceCall:
@@ -23,6 +29,8 @@ def request_service_call(uow: UnitOfWork, clock: Clock, qr_token: str, call_type
         existing = uow.service_calls.pending_for_session(session.id, call_type)
         if existing is not None:
             return existing
+        if call_type == ServiceCallType.REQUEST_BILL and table.status != TableStatus.BILL_REQUESTED:
+            _require_something_to_charge(session)
         now = clock.now()
         call = ServiceCall(uuid4(), session.id, table.id, call_type, now)
         uow.service_calls.add(call)
@@ -64,6 +72,7 @@ def request_bill_by_staff(uow: UnitOfWork, clock: Clock, table_id: UUID, staff_i
         if not can_order(table.status) or table.current_session_id is None:
             raise InvalidTransition(details={"status": table.status.value})
         session = uow.sessions.get_for_update(table.current_session_id)
+        _require_something_to_charge(session)
         apply_table_event(uow, clock, table, TableEvent.BILL_REQUESTED, ChangeSource.STAFF, staff_id)
         session.bill_requested_at = clock.now()
         uow.sessions.save(session)

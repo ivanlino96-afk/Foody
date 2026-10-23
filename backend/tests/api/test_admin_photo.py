@@ -49,3 +49,4 @@ def test_photo_upload_rejects_wrong_type_and_size(client, admin, storage, name, 
                     files={"file": (name, content, ctype)})
     assert r.status_code == 422 and r.json()["code"] == "invalid_customization"
     assert storage.uploads == []
+

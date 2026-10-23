@@ -37,6 +37,11 @@ class InvalidReference(DomainError):
     default_message = "Alguna referencia no existe"
 
 
+class InvalidValue(DomainError):
+    code = "validation_error"
+    default_message = "Algún campo tiene un valor no permitido"
+
+
 class ServiceUnavailable(DomainError):
     code = "service_unavailable"
     default_message = "Este servicio no está configurado"
@@ -48,6 +53,7 @@ STATUS_BY_ERROR: dict[type[DomainError], int] = {
     Conflict: 409,
     DuplicateEmail: 409,
     InvalidReference: 422,
+    InvalidValue: 422,
     ServiceUnavailable: 503,
     NotFound: 404,
     TableNotOpen: 403,
@@ -86,6 +92,8 @@ async def _integrity_error(request: Request, exc: IntegrityError) -> JSONRespons
         return await _domain_error(request, Conflict())
     if sqlstate == "23503":
         return await _domain_error(request, InvalidReference())
+    if sqlstate in ("23502", "23514"):  # not-null or check violation, e.g. an explicit null in a PATCH
+        return await _domain_error(request, InvalidValue())
     raise exc
 
 

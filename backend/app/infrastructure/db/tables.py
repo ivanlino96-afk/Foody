@@ -31,7 +31,8 @@ dining_tables = Table(
     "dining_tables", metadata, _uuid("id", primary_key=True), Column("code", Text), Column("label", Text),
     Column("zone", Text), Column("capacity", Integer), Column("qr_token", Text), Column("status", table_status),
     _uuid("current_session_id"), Column("status_changed_at", DateTime(timezone=True)),
-    Column("sort_order", Integer), Column("deleted_at", DateTime(timezone=True)),
+    Column("sort_order", Integer), Column("deleted_at", DateTime(timezone=True)), _uuid("created_by"),
+    _uuid("updated_by"),
 )
 
 table_sessions = Table(
@@ -64,16 +65,18 @@ ingredients = Table("ingredients", metadata, _uuid("id", primary_key=True), Colu
                     Column("is_available", Boolean), Column("deleted_at", DateTime(timezone=True)),
                     _uuid("created_by"), _uuid("updated_by"))
 
-menu_item_ingredients = Table("menu_item_ingredients", metadata, _uuid("menu_item_id"), _uuid("ingredient_id"),
-                              Column("is_removable", Boolean), Column("sort_order", Integer))
+menu_item_ingredients = Table("menu_item_ingredients", metadata, _uuid("id", primary_key=True),
+                              _uuid("menu_item_id"), _uuid("ingredient_id"), Column("is_removable", Boolean),
+                              Column("sort_order", Integer), _uuid("created_by"))
 
 extras = Table("extras", metadata, _uuid("id", primary_key=True), Column("name", Text),
                Column("price_cents", Integer), Column("cost_cents", Integer), _uuid("ingredient_id"),
                Column("is_available", Boolean), Column("deleted_at", DateTime(timezone=True)),
                _uuid("created_by"), _uuid("updated_by"))
 
-menu_item_extras = Table("menu_item_extras", metadata, _uuid("menu_item_id"), _uuid("extra_id"),
-                         Column("max_quantity", Integer), Column("sort_order", Integer))
+menu_item_extras = Table("menu_item_extras", metadata, _uuid("id", primary_key=True), _uuid("menu_item_id"),
+                         _uuid("extra_id"), Column("max_quantity", Integer), Column("sort_order", Integer),
+                         _uuid("created_by"))
 
 daily_counters = Table("daily_counters", metadata, Column("day", Date, primary_key=True),
                        Column("last_number", Integer))

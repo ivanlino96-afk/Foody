@@ -2,6 +2,7 @@ from typing import Self
 
 from sqlalchemy import Connection, Engine
 
+from app.infrastructure.db.admin_repositories import SqlCatalogRepository
 from app.infrastructure.db.repositories import (
     SqlAvailabilityRepository,
     SqlHistoryRepository,
@@ -35,6 +36,7 @@ class SqlUnitOfWork:
         self.service_calls = SqlServiceCallRepository(self._conn)
         self.payments = SqlPaymentRepository(self._conn)
         self.availability = SqlAvailabilityRepository(self._conn)
+        self.catalog = SqlCatalogRepository(self._conn)
         return self
 
     def __exit__(self, *exc: object) -> None:

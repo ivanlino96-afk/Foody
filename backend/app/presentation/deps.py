@@ -5,13 +5,14 @@ from uuid import UUID
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.application.ports import Clock, UnitOfWork
+from app.application.ports import Clock, PhotoStorage, UnitOfWork
 from app.domain.enums import StaffRole
 from app.domain.errors import Forbidden
 from app.infrastructure.auth.jwt_verifier import JwtVerifier
 from app.infrastructure.clock import SystemClock
 from app.infrastructure.db.unit_of_work import SqlUnitOfWork
-from app.presentation.errors import Unauthorized
+from app.infrastructure.storage import SupabasePhotoStorage
+from app.presentation.errors import ServiceUnavailable, Unauthorized
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -29,6 +30,13 @@ def get_uow(request: Request) -> Iterator[UnitOfWork]:
 
 def get_clock(request: Request) -> Clock:
     return SystemClock(request.app.state.settings.timezone)
+
+
+def get_photo_storage(request: Request) -> PhotoStorage:
+    settings = request.app.state.settings
+    if not settings.supabase_service_role_key:
+        raise ServiceUnavailable("Falta SUPABASE_SERVICE_ROLE_KEY para subir fotos")
+    return SupabasePhotoStorage(settings.supabase_url, settings.supabase_service_role_key)
 
 
 def get_verifier(request: Request) -> JwtVerifier:

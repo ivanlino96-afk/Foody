@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 
 from app.domain.errors import (
     DomainError,
@@ -25,9 +26,27 @@ class RateLimited(DomainError):
     default_message = "Demasiadas órdenes seguidas; espera un momento"
 
 
+class Conflict(DomainError):
+    code = "conflict"
+    default_message = "Ya existe un registro con ese nombre o código"
+
+
+class InvalidReference(DomainError):
+    code = "invalid_reference"
+    default_message = "Alguna referencia no existe"
+
+
+class ServiceUnavailable(DomainError):
+    code = "service_unavailable"
+    default_message = "Este servicio no está configurado"
+
+
 STATUS_BY_ERROR: dict[type[DomainError], int] = {
     Unauthorized: 401,
     RateLimited: 429,
+    Conflict: 409,
+    InvalidReference: 422,
+    ServiceUnavailable: 503,
     NotFound: 404,
     TableNotOpen: 403,
     Forbidden: 403,
@@ -59,6 +78,16 @@ async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResp
                         status_code=422)
 
 
+async def _integrity_error(request: Request, exc: IntegrityError) -> JSONResponse:
+    sqlstate = getattr(exc.orig, "sqlstate", None)
+    if sqlstate == "23505":
+        return await _domain_error(request, Conflict())
+    if sqlstate == "23503":
+        return await _domain_error(request, InvalidReference())
+    raise exc
+
+
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(DomainError, _domain_error)
+    app.add_exception_handler(IntegrityError, _integrity_error)
     app.add_exception_handler(RequestValidationError, _validation_error)

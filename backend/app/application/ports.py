@@ -106,6 +106,30 @@ class AvailabilityRepository(Protocol):
     def list_board(self) -> AvailabilityBoardView: ...
 
 
+CatalogKind = str  # "categories" | "ingredients" | "extras" | "menu_items" | "dining_tables"
+
+
+class CatalogRepository(Protocol):
+    """Admin CRUD over catalog tables; rows travel as plain dicts (no business rules live here)."""
+
+    def list_all(self, kind: CatalogKind) -> list[dict]: ...
+
+    def get(self, kind: CatalogKind, entity_id: UUID) -> dict | None: ...
+
+    def create(self, kind: CatalogKind, values: dict, staff_id: UUID) -> UUID: ...
+
+    def update(self, kind: CatalogKind, entity_id: UUID, values: dict, staff_id: UUID) -> bool: ...
+
+    def soft_delete(self, kind: CatalogKind, entity_id: UUID, staff_id: UUID) -> bool: ...
+
+    def set_item_links(self, item_id: UUID, ingredients: list[dict] | None, extras: list[dict] | None,
+                       staff_id: UUID) -> None: ...
+
+
+class PhotoStorage(Protocol):
+    def upload(self, path: str, content: bytes, content_type: str) -> None: ...
+
+
 class UnitOfWork(Protocol):
     tables: TableRepository
     sessions: SessionRepository
@@ -117,6 +141,7 @@ class UnitOfWork(Protocol):
     service_calls: ServiceCallRepository
     payments: PaymentRepository
     availability: AvailabilityRepository
+    catalog: CatalogRepository
 
     def __enter__(self) -> Self: ...
 

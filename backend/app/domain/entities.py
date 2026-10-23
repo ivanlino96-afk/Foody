@@ -69,6 +69,11 @@ class DiningTable:
     status: TableStatus
     current_session_id: UUID | None
     status_changed_at: datetime
+    kind: str = "table"
+    area_id: UUID | None = None
+    pos_x: float | None = None
+    pos_y: float | None = None
+    rotation: int = 0
 
 
 @dataclass

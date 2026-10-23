@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Date, DateTime, FetchedValue, Integer, MetaData, Table, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, FetchedValue, Float, Integer, MetaData, Table, Text
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
 
 metadata = MetaData()
@@ -35,6 +35,14 @@ dining_tables = Table(
     "dining_tables", metadata, _uuid("id", primary_key=True), Column("code", Text), Column("label", Text),
     Column("zone", Text), Column("capacity", Integer), Column("qr_token", Text), Column("status", table_status),
     _uuid("current_session_id"), Column("status_changed_at", DateTime(timezone=True)),
+    Column("sort_order", Integer), Column("deleted_at", DateTime(timezone=True)), _uuid("created_by"),
+    _uuid("updated_by"), Column("kind", Text), _uuid("area_id"), Column("pos_x", Float), Column("pos_y", Float),
+    Column("rotation", Integer),
+)
+
+floor_areas = Table(
+    "floor_areas", metadata, _uuid("id", primary_key=True), Column("name", Text), Column("kind", Text),
+    Column("x", Float), Column("y", Float), Column("width", Float), Column("depth", Float),
     Column("sort_order", Integer), Column("deleted_at", DateTime(timezone=True)), _uuid("created_by"),
     _uuid("updated_by"),
 )

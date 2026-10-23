@@ -139,7 +139,7 @@ class AvailabilityRepository(Protocol):
     def list_board(self) -> AvailabilityBoardView: ...
 
 
-CatalogKind = str  # "categories" | "ingredients" | "extras" | "menu_items" | "dining_tables"
+CatalogKind = str  # "categories" | "ingredients" | "extras" | "menu_items" | "dining_tables" | "floor_areas"
 
 
 class CatalogRepository(Protocol):

@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -91,12 +91,19 @@ class MenuItemPatch(BaseModel):
     extras: list[ExtraLink] | None = Field(None, max_length=20)
 
 
+TableKind = Literal["table", "round", "bar", "high", "booth"]
+AreaKind = Literal["salon", "jardin", "roof", "terraza", "barra", "privado", "otro"]
+TableCode = Field(min_length=1, max_length=20, pattern=r"^[A-Za-z0-9 _-]+$")
+Meters = Field(ge=0, le=100)
+
+
 class TableIn(BaseModel):
-    code: str = Field(min_length=1, max_length=20, pattern=r"^[A-Za-z0-9 _-]+$")
+    code: str = TableCode
     label: str | None = Field(None, max_length=80)
     zone: str | None = Field(None, max_length=40)
     capacity: int | None = Field(None, ge=1, le=50)
     sort_order: int = 0
+    kind: TableKind = "table"
 
 
 class TablePatch(BaseModel):
@@ -105,6 +112,35 @@ class TablePatch(BaseModel):
     zone: str | None = Field(None, max_length=40)
     capacity: int | None = Field(None, ge=1, le=50)
     sort_order: int | None = None
+    kind: TableKind | None = None
+
+
+class FloorAreaIn(BaseModel):
+    id: UUID | None = None
+    key: str = Field(min_length=1, max_length=64)
+    name: str = Field(min_length=1, max_length=40, pattern=r"^[^\x00]*$")
+    kind: AreaKind = "salon"
+    x: float = Meters
+    y: float = Meters
+    width: float = Field(gt=0, le=100)
+    depth: float = Field(gt=0, le=100)
+
+
+class FloorTableIn(BaseModel):
+    id: UUID | None = None
+    code: str = TableCode
+    label: str | None = Field(None, max_length=80)
+    capacity: int = Field(ge=1, le=50)
+    kind: TableKind = "table"
+    pos_x: float | None = Field(None, ge=0, le=100)
+    pos_y: float | None = Field(None, ge=0, le=100)
+    rotation: Literal[0, 90, 180, 270] = 0
+
+
+class FloorLayoutIn(BaseModel):
+    areas: list[FloorAreaIn] = Field(max_length=40)
+    tables: list[FloorTableIn] = Field(max_length=300)
+    deleted_table_ids: list[UUID] = Field(default_factory=list, max_length=300)
 
 
 class StaffIn(BaseModel):

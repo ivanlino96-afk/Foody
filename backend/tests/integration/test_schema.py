@@ -55,5 +55,5 @@ def test_realtime_publication(conn):
 
 
 def test_seed_has_demo_data(conn):
-    assert conn.execute(text("select count(*) from dining_tables")).scalar() == 6
+    assert conn.execute(text("select count(*) from dining_tables")).scalar() == 7
     assert conn.execute(text("select count(*) from staff")).scalar() == 3

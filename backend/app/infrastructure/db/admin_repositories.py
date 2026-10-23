@@ -15,10 +15,12 @@ _KINDS: dict[str, Table] = {
     "extras": t.extras,
     "menu_items": t.menu_items,
     "dining_tables": t.dining_tables,
+    "floor_areas": t.floor_areas,
 }
 _HIDDEN = {"deleted_at", "created_by", "updated_by"}
 _ORDER = {"categories": ("sort_order", "name"), "ingredients": ("name",), "extras": ("name",),
-          "menu_items": ("sort_order", "name"), "dining_tables": ("sort_order", "code")}
+          "menu_items": ("sort_order", "name"), "dining_tables": ("sort_order", "code"),
+          "floor_areas": ("sort_order", "name")}
 
 
 class SqlCatalogRepository:

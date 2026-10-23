@@ -36,15 +36,15 @@ export function emptySession(over: Partial<DinerSession> = {}): DinerSession {
            pending_calls: [], ...over }
 }
 
-export function fakeApi(over: Partial<{ [K in keyof DinerApi]: DinerApi[K] }> = {}) {
+export function fakeApi(over: Partial<DinerApi> = {}) {
   return {
-    getTable: vi.fn(async () => OPEN_TABLE),
-    getMenu: vi.fn(async () => MENU),
-    getSession: vi.fn(async () => emptySession()),
-    placeOrder: vi.fn(async () => ({ order_id: 'o1', daily_number: 1, round_number: 1, status: 'received' as const,
-                                    subtotal_cents: 9500 })),
-    callService: vi.fn(async (type) => ({ id: 'call1', type, created_at: '2026-10-23T18:00:00Z' })),
-    ...over,
+    getTable: vi.fn<DinerApi['getTable']>(over.getTable ?? (async () => OPEN_TABLE)),
+    getMenu: vi.fn<DinerApi['getMenu']>(over.getMenu ?? (async () => MENU)),
+    getSession: vi.fn<DinerApi['getSession']>(over.getSession ?? (async () => emptySession())),
+    placeOrder: vi.fn<DinerApi['placeOrder']>(over.placeOrder ?? (async () => ({
+      order_id: 'o1', daily_number: 1, round_number: 1, status: 'received', subtotal_cents: 9500 }))),
+    callService: vi.fn<DinerApi['callService']>(over.callService ??
+      (async (type) => ({ id: 'call1', type, created_at: '2026-10-23T18:00:00Z' }))),
   }
 }
 

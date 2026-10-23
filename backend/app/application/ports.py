@@ -4,7 +4,7 @@ from typing import Protocol, Self
 from uuid import UUID
 
 from app.application.dto import MenuCategoryView, StaffMember
-from app.domain.entities import DiningTable, MenuItem, Order, ServiceCall, StatusChange, TableSession
+from app.domain.entities import DiningTable, MenuItem, Order, Payment, ServiceCall, StatusChange, TableSession
 from app.domain.enums import OrderStatus, ServiceCallType, TableStatus
 
 
@@ -90,6 +90,12 @@ class ServiceCallRepository(Protocol):
     def list_pending(self) -> list[ServiceCall]: ...
 
 
+class PaymentRepository(Protocol):
+    def add(self, payment: Payment) -> None: ...
+
+    def list_by_session(self, session_id: UUID) -> list[Payment]: ...
+
+
 class UnitOfWork(Protocol):
     tables: TableRepository
     sessions: SessionRepository
@@ -99,6 +105,7 @@ class UnitOfWork(Protocol):
     staff: StaffRepository
     settings: SettingsRepository
     service_calls: ServiceCallRepository
+    payments: PaymentRepository
 
     def __enter__(self) -> Self: ...
 

@@ -14,6 +14,7 @@ from app.domain.entities import (
     ItemIngredient,
     MenuItem,
     Order,
+    Payment,
     ServiceCall,
     StatusChange,
     TableSession,
@@ -82,6 +83,7 @@ class _State:
     daily: dict[date, int] = field(default_factory=dict)
     auto_release_minutes: int = 5
     service_calls: dict[UUID, ServiceCall] = field(default_factory=dict)
+    payments: dict[UUID, Payment] = field(default_factory=dict)
 
 
 class _Tables:
@@ -214,6 +216,18 @@ class _ServiceCalls:
                       key=lambda c: c.created_at)
 
 
+class _Payments:
+    def __init__(self, uow: "InMemoryUnitOfWork") -> None:
+        self._uow = uow
+
+    def add(self, payment):
+        self._uow.state.payments[payment.id] = payment
+
+    def list_by_session(self, session_id):
+        return sorted((p for p in self._uow.state.payments.values() if p.session_id == session_id),
+                      key=lambda p: p.created_at)
+
+
 class InMemoryUnitOfWork:
     def __init__(self) -> None:
         self.state = _State()
@@ -227,6 +241,7 @@ class InMemoryUnitOfWork:
         self.staff = _Staff(self)
         self.settings = _Settings(self)
         self.service_calls = _ServiceCalls(self)
+        self.payments = _Payments(self)
 
     def __enter__(self):
         self._snapshot = copy.deepcopy(self.state)

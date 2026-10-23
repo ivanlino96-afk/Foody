@@ -66,6 +66,8 @@ def cancel_order(uow: UnitOfWork, clock: Clock, order_id: UUID, staff_id: UUID, 
         order.cancel_reason = reason.strip()
         uow.orders.save(order)
         session = uow.sessions.get_for_update(order.session_id)
+        if session.closed_at is not None or session.paid_at is not None:
+            raise InvalidTransition("La cuenta ya está pagada", {"session_id": str(session.id)})
         session.subtotal_cents -= order.subtotal_cents
         session.cost_cents -= order.cost_cents
         uow.sessions.save(session)

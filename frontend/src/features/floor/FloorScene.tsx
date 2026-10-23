@@ -23,6 +23,7 @@ export interface FloorSceneProps {
   selected?: FloorSelection
   view: FloorView
   editable?: boolean
+  base?: FloorBase
   onSelect?(selection: FloorSelection): void
   onMoveTable?(key: string, dx: number, dy: number, done: boolean): void
   onMoveArea?(key: string, dx: number, dy: number, done: boolean): void
@@ -34,6 +35,16 @@ const WHITE = new THREE.MeshStandardMaterial({ color: '#FBFAF7', roughness: 0.92
 const SOFT = new THREE.MeshStandardMaterial({ color: '#F1EEE8', roughness: 0.95 })
 const PLINTH = new THREE.MeshStandardMaterial({ color: '#F6F4EF', roughness: 0.9 })
 const WOOD = new THREE.MeshStandardMaterial({ color: '#A8784C', roughness: 0.65 })
+const FOREST = new THREE.MeshStandardMaterial({ color: '#2F4A3A', roughness: 0.8 })
+const STONE = new THREE.MeshStandardMaterial({ color: '#EFEDE8', roughness: 0.9 })
+
+/** How the maquette sits on the page. Draft options while the look is chosen. */
+export type FloorBase = 'madera' | 'flotante' | 'bosque' | 'galeria' | 'piso'
+function devBase(): FloorBase | null {
+  if (!import.meta.env.DEV || typeof location === 'undefined') return null
+  const b = new URLSearchParams(location.search).get('base')
+  return b && ['madera', 'flotante', 'bosque', 'galeria', 'piso'].includes(b) ? (b as FloorBase) : null
+}
 const ACCENT = new THREE.MeshBasicMaterial({ color: '#2F4A3A' })
 const HANDLE = new THREE.MeshStandardMaterial({ color: '#A8784C', roughness: 0.5 })
 const TOP_H = 0.75
@@ -398,6 +409,47 @@ function useGroundDrag(controlsRef: React.MutableRefObject<OrbitControls | null>
   }, [camera, gl, controlsRef])
 }
 
+/** What the maquette stands on; every option keeps the plan's top at y = 0. */
+function Base({ base, center, width, depth, span, onClear }: {
+  base: FloorBase; center: [number, number]; width: number; depth: number; span: number; onClear(): void
+}) {
+  const clear = (e: ThreeEvent<MouseEvent>) => { if (e.delta < 6) onClear() }
+  const ground = (y: number, opacity: number) => (
+    <mesh position={[center[0], y, center[1]]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onClick={clear}>
+      <planeGeometry args={[span * 6, span * 6]} />
+      <shadowMaterial opacity={opacity} />
+    </mesh>
+  )
+  const plinth = (pad: number, h: number, material: THREE.Material, y = -h / 2) => (
+    <mesh material={material} position={[center[0], y, center[1]]} castShadow receiveShadow onClick={clear}>
+      <boxGeometry args={[width + pad, h, depth + pad]} />
+    </mesh>
+  )
+  const edge = (pad: number, h: number, y: number) => (
+    <lineSegments position={[center[0], y, center[1]]}>
+      <edgesGeometry args={[new THREE.BoxGeometry(width + pad, h, depth + pad)]} />
+      <lineBasicMaterial color="#E3DED3" />
+    </lineSegments>
+  )
+  switch (base) {
+    case 'flotante': // a thin white slab casting a soft shadow on the page
+      return <>{plinth(1.2, 0.3, PLINTH)}{ground(-1.1, 0.16)}</>
+    case 'bosque': // white plinth on the brand-green stand
+      return <>{plinth(2.6, 0.5, FOREST, -0.45)}{plinth(1.4, 0.2, PLINTH, -0.1)}{ground(-0.7, 0.12)}</>
+    case 'galeria': // one tall white pedestal with a hairline edge, like a museum model
+      return <>{plinth(1.6, 0.9, STONE)}{edge(1.6, 0.9, -0.45)}{ground(-0.9, 0.14)}</>
+    case 'piso': // no stand: the plan is drawn on the page itself, with a faint grid
+      return (
+        <>
+          {ground(0, 0.14)}
+          <gridHelper args={[Math.ceil(span + 6), Math.ceil(span + 6), '#E3DED3', '#EFEDE8']} position={[center[0], 0.001, center[1]]} />
+        </>
+      )
+    default: // wooden base and white plinth, like a 3D-printed model on its stand
+      return <>{plinth(2.6, 0.5, WOOD, -0.45)}{plinth(1.4, 0.2, PLINTH, -0.1)}</>
+  }
+}
+
 function Scene(p: FloorSceneProps) {
   const fonts = useFontsReady()
   const controlsRef = useRef<OrbitControls | null>(null)
@@ -426,14 +478,8 @@ function Scene(p: FloorSceneProps) {
         shadow-camera-near={0.5} shadow-camera-far={span * 4} />
       <Controls center={center} board={bounds} view={p.view} controlsRef={controlsRef} />
 
-      {/* Wooden base and white plinth, like a 3D-printed model on its stand. */}
-      <mesh material={WOOD} position={[center[0], -0.45, center[1]]} receiveShadow>
-        <boxGeometry args={[bounds.width + 2.6, 0.5, bounds.depth + 2.6]} />
-      </mesh>
-      <mesh material={PLINTH} position={[center[0], -0.1, center[1]]} receiveShadow
-        onClick={(e) => { if (e.delta < 6) p.onSelect?.(null) }}>
-        <boxGeometry args={[bounds.width + 1.4, 0.2, bounds.depth + 1.4]} />
-      </mesh>
+      <Base base={devBase() ?? p.base ?? 'madera'} center={center} width={bounds.width} depth={bounds.depth} span={span}
+        onClear={() => p.onSelect?.(null)} />
 
       {p.areas.map((a) => (
         <AreaBlock key={a.key} area={a} fonts={fonts} editable={editable}

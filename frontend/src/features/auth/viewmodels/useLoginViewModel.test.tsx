@@ -60,4 +60,28 @@ describe('LoginView', () => {
     await fill('admin@foody.local', 'foody1234')
     expect(await screen.findByText('at:/cocina/disponibilidad')).toBeInTheDocument()
   })
+
+  it('offers an older session instead of following it, so another account can sign in', async () => {
+    let role: 'waiter' | 'admin' = 'waiter'
+    stubFetch({ 'GET /me': () => meAs(role) })
+    const client = fakeAuthClient('tok-old')
+    renderLogin(client)
+    expect(await screen.findByRole('status')).toHaveTextContent('sesión abierta')
+    expect(screen.queryByText(/^at:/)).not.toBeInTheDocument()
+    const user = userEvent.setup()
+    await act(async () => user.click(screen.getByRole('button', { name: 'Usar otra cuenta' })))
+    expect(client.signOut).toHaveBeenCalled()
+    role = 'admin'
+    await fill('admin@foody.local', 'foody1234')
+    expect(await screen.findByText('at:/admin')).toBeInTheDocument()
+  })
+
+  it('continues with the older session when asked', async () => {
+    stubFetch({ 'GET /me': meAs('waiter') })
+    renderLogin(fakeAuthClient('tok-old'))
+    const user = userEvent.setup()
+    const proceed = await screen.findByRole('button', { name: 'Continuar' })
+    await act(async () => user.click(proceed))
+    expect(await screen.findByText('at:/mesero')).toBeInTheDocument()
+  })
 })

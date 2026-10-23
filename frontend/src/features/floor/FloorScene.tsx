@@ -2,6 +2,8 @@ import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import {
   AREA_KINDS, boardBounds, footprint, seats, type FloorArea, type FloorTable,
 } from '../../domain/floor'
@@ -31,9 +33,9 @@ export interface FloorSceneProps {
 }
 
 // Maquette look: matte white furniture on a thin white slab floating over the page.
-const WHITE = new THREE.MeshStandardMaterial({ color: '#FBFAF7', roughness: 0.92 })
-const SOFT = new THREE.MeshStandardMaterial({ color: '#F1EEE8', roughness: 0.95 })
-const PLINTH = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.9 })
+const WHITE = new THREE.MeshStandardMaterial({ color: '#FCFCFB', roughness: 0.78 })
+const SOFT = new THREE.MeshStandardMaterial({ color: '#E4ECE6', roughness: 0.9 })
+const PLINTH = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.7 })
 const WOOD = new THREE.MeshStandardMaterial({ color: '#A8784C', roughness: 0.65 })
 const FOREST = new THREE.MeshStandardMaterial({ color: '#2F4A3A', roughness: 0.8 })
 const STONE = new THREE.MeshStandardMaterial({ color: '#EFEDE8', roughness: 0.9 })
@@ -48,6 +50,19 @@ function devBase(): FloorBase | null {
 const ACCENT = new THREE.MeshBasicMaterial({ color: '#2F4A3A' })
 const HANDLE = new THREE.MeshStandardMaterial({ color: '#2F4A3A', roughness: 0.5 })
 const TOP_H = 0.75
+
+/** Shared rounded boxes: softened edges read as a finished model instead of raw blocks. */
+const ROUNDED = new Map<string, RoundedBoxGeometry>()
+function rounded(w: number, h: number, d: number, r = 0.03) {
+  const radius = Math.min(r, w / 2, h / 2, d / 2)
+  const key = [w, h, d, radius].map((n) => n.toFixed(3)).join('|')
+  let geo = ROUNDED.get(key)
+  if (!geo) {
+    geo = new RoundedBoxGeometry(w, h, d, 3, radius)
+    ROUNDED.set(key, geo)
+  }
+  return geo
+}
 const BAR_H = 1.05
 
 const FONT = '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif'
@@ -68,7 +83,7 @@ function useTextTexture(text: string, opts: { color: string; bg?: string; weight
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
-    const size = 96
+    const size = 192
     if (!ctx) return { texture: null, aspect: 1 }
     ctx.font = `${opts.weight ?? 800} ${size}px ${FONT}`
     const pad = opts.pill ? size * 0.55 : size * 0.1
@@ -89,7 +104,7 @@ function useTextTexture(text: string, opts: { color: string; bg?: string; weight
     ctx.fillText(text, canvas.width / 2, canvas.height / 2 + size * 0.04)
     const tex = new THREE.CanvasTexture(canvas)
     tex.colorSpace = THREE.SRGBColorSpace
-    tex.anisotropy = 4
+    tex.anisotropy = 8
     return { texture: tex, aspect: canvas.width / canvas.height }
     // `fonts` forces a repaint once the web font is ready.
   }, [text, opts.color, opts.bg, opts.weight, opts.pill, fonts]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -129,22 +144,23 @@ function Chair({ x, z, bx, bz, stool, high }: { x: number; z: number; bx: number
     return (
       <group position={[x, 0, z]}>
         <mesh material={WHITE} position={[0, h / 2, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[0.04, 0.09, h, 12]} />
+          <cylinderGeometry args={[0.035, 0.08, h, 24]} />
         </mesh>
         <mesh material={WHITE} position={[0, h + 0.03, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[0.18, 0.18, 0.06, 20]} />
+          <cylinderGeometry args={[0.18, 0.18, 0.06, 40]} />
         </mesh>
       </group>
     )
   }
   return (
     <group position={[x, 0, z]} rotation={[0, angle, 0]}>
-      <mesh material={WHITE} position={[0, 0.22, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.4, 0.44, 0.4]} />
-      </mesh>
-      <mesh material={WHITE} position={[0, 0.66, 0.17]} castShadow receiveShadow>
-        <boxGeometry args={[0.4, 0.44, 0.06]} />
-      </mesh>
+      {[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sz]) => (
+        <mesh key={`${sx}${sz}`} material={WHITE} position={[sx * 0.16, 0.2, sz * 0.16]} castShadow>
+          <cylinderGeometry args={[0.022, 0.018, 0.4, 8]} />
+        </mesh>
+      ))}
+      <mesh material={WHITE} geometry={rounded(0.42, 0.06, 0.42, 0.025)} position={[0, 0.43, 0]} castShadow receiveShadow />
+      <mesh material={WHITE} geometry={rounded(0.42, 0.42, 0.05, 0.022)} position={[0, 0.68, 0.185]} castShadow receiveShadow />
     </group>
   )
 }
@@ -181,38 +197,30 @@ function TableModel({ table, overlay, selected, editable, fonts, onPick, onDragS
         </mesh>
       )}
       {table.kind === 'bar' ? (
-        <mesh material={WHITE} position={[0, BAR_H / 2 - 0.03, -0.05]} castShadow receiveShadow>
-          <boxGeometry args={[width, BAR_H - 0.06, depth - 0.1]} />
-        </mesh>
+        <mesh material={WHITE} geometry={rounded(width, BAR_H - 0.06, depth - 0.1, 0.05)} position={[0, BAR_H / 2 - 0.03, -0.05]} castShadow receiveShadow />
       ) : round ? (
         <mesh material={WHITE} position={[0, topH / 2, 0]} castShadow>
-          <cylinderGeometry args={[0.05, 0.05, topH, 10]} />
+          <cylinderGeometry args={[0.045, 0.045, topH, 20]} />
         </mesh>
       ) : (
         [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sz]) => (
           <mesh key={`${sx}${sz}`} material={WHITE} position={[sx * (width / 2 - 0.06), topH / 2, sz * (depth / 2 - 0.06)]} castShadow>
-            <boxGeometry args={[0.06, topH, 0.06]} />
+            <cylinderGeometry args={[0.028, 0.028, topH, 10]} />
           </mesh>
         ))
       )}
       {round ? (
         <mesh material={topMaterial} position={[0, topH, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[width / 2, width / 2, 0.05, 40]} />
+          <cylinderGeometry args={[width / 2, width / 2, 0.05, 64]} />
         </mesh>
       ) : (
-        <mesh material={topMaterial} position={[0, topH, 0]} castShadow receiveShadow>
-          <boxGeometry args={[width, 0.05, depth]} />
-        </mesh>
+        <mesh material={topMaterial} geometry={rounded(width, 0.05, depth, 0.024)} position={[0, topH, 0]} castShadow receiveShadow />
       )}
       {table.kind === 'booth' ? (
         [-1, 1].map((side) => (
           <group key={side} position={[0, 0, side * (depth / 2 + 0.32)]}>
-            <mesh material={WHITE} position={[0, 0.22, 0]} castShadow receiveShadow>
-              <boxGeometry args={[width + 0.2, 0.44, 0.48]} />
-            </mesh>
-            <mesh material={WHITE} position={[0, 0.6, side * 0.21]} castShadow receiveShadow>
-              <boxGeometry args={[width + 0.2, 1.2, 0.08]} />
-            </mesh>
+            <mesh material={WHITE} geometry={rounded(width + 0.2, 0.44, 0.48, 0.06)} position={[0, 0.22, 0]} castShadow receiveShadow />
+            <mesh material={WHITE} geometry={rounded(width + 0.2, 1.2, 0.1, 0.04)} position={[0, 0.6, side * 0.21]} castShadow receiveShadow />
           </group>
         ))
       ) : (
@@ -237,7 +245,7 @@ function Tree({ x, z }: { x: number; z: number }) {
         <cylinderGeometry args={[0.04, 0.06, 0.9, 8]} />
       </mesh>
       <mesh material={WHITE} position={[0, 1.15, 0]} castShadow receiveShadow>
-        <icosahedronGeometry args={[0.45, 1]} />
+        <icosahedronGeometry args={[0.45, 3]} />
       </mesh>
     </group>
   )
@@ -253,7 +261,7 @@ function AreaBlock({ area, selected, editable, fonts, onPick, onDragStart, onRes
   onResizeStart(e: ThreeEvent<PointerEvent>): void
 }) {
   const meta = AREA_KINDS[area.kind]
-  const floor = useMemo(() => new THREE.MeshStandardMaterial({ color: meta.floor, roughness: 0.95 }), [meta.floor])
+  const floor = useMemo(() => new THREE.MeshStandardMaterial({ color: meta.floor, roughness: 0.85 }), [meta.floor])
   useEffect(() => () => floor.dispose(), [floor])
   const { width: w, depth: d, x, y } = area
   const t = 0.08
@@ -267,15 +275,11 @@ function AreaBlock({ area, selected, editable, fonts, onPick, onDragStart, onRes
 
   return (
     <group position={[x, 0, y]}>
-      <mesh material={floor} position={[w / 2, 0.03, d / 2]} receiveShadow
+      <mesh material={floor} geometry={rounded(w - 0.02, 0.06, d - 0.02, 0.02)} position={[w / 2, 0.03, d / 2]} receiveShadow
         onPointerDown={editable ? (e) => { onPick(); onDragStart(e) } : undefined}
-        onClick={(e) => { e.stopPropagation(); if (!editable) onPick() }}>
-        <boxGeometry args={[w - 0.02, 0.06, d - 0.02]} />
-      </mesh>
+        onClick={(e) => { e.stopPropagation(); if (!editable) onPick() }} />
       {walls.map(([cx, cz, ww, dd], i) => (
-        <mesh key={i} material={WHITE} position={[cx, 0.06 + h / 2, cz]} castShadow receiveShadow>
-          <boxGeometry args={[ww, h, dd]} />
-        </mesh>
+        <mesh key={i} material={WHITE} geometry={rounded(ww, h, dd, 0.03)} position={[cx, 0.06 + h / 2, cz]} castShadow receiveShadow />
       ))}
       {trees.map(([tx, tz], i) => <Tree key={i} x={tx} z={tz} />)}
       <group position={[0.35, 0, 0.42]}>
@@ -421,9 +425,8 @@ function Base({ base, center, width, depth, span, onClear }: {
     </mesh>
   )
   const plinth = (pad: number, h: number, material: THREE.Material, y = -h / 2) => (
-    <mesh material={material} position={[center[0], y, center[1]]} castShadow receiveShadow onClick={clear}>
-      <boxGeometry args={[width + pad, h, depth + pad]} />
-    </mesh>
+    <mesh material={material} geometry={rounded(width + pad, h, depth + pad, 0.12)} position={[center[0], y, center[1]]}
+      castShadow receiveShadow onClick={clear} />
   )
   const edge = (pad: number, h: number, y: number) => (
     <lineSegments position={[center[0], y, center[1]]}>
@@ -433,7 +436,7 @@ function Base({ base, center, width, depth, span, onClear }: {
   )
   switch (base) {
     case 'flotante': // a thin white slab casting a soft shadow on the page
-      return <>{plinth(1.2, 0.3, PLINTH)}{ground(-1.1, 0.09)}</>
+      return <>{plinth(1.2, 0.3, PLINTH)}{ground(-0.34, 0.1)}</>
     case 'bosque': // white plinth on the brand-green stand
       return <>{plinth(2.6, 0.5, FOREST, -0.45)}{plinth(1.4, 0.2, PLINTH, -0.1)}{ground(-0.7, 0.12)}</>
     case 'galeria': // one tall white pedestal with a hairline edge, like a museum model
@@ -461,6 +464,17 @@ function Scene(p: FloorSceneProps) {
   const editable = !!p.editable
   const sun = useRef<THREE.DirectionalLight>(null)
   const invalidate = useThree((s) => s.invalidate)
+  const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
+  // A neutral studio reflection gives the white materials soft shading on every face.
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl)
+    const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    scene.environment = env
+    scene.environmentIntensity = 0.3
+    invalidate()
+    return () => { scene.environment = null; env.dispose(); pmrem.dispose() }
+  }, [gl, scene, invalidate])
   useEffect(() => {
     sun.current?.target.position.set(center[0], 0, center[1])
     sun.current?.target.updateMatrixWorld()
@@ -471,9 +485,9 @@ function Scene(p: FloorSceneProps) {
   return (
     <>
       <color attach="background" args={['#FFFFFF']} />
-      <hemisphereLight args={['#FFFFFF', '#E8ECE9', 1.8]} />
-      <directionalLight ref={sun} position={[center[0] - span * 0.9, span * 0.85, center[1] - span * 0.45]} intensity={1.45} castShadow
-        shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02}
+      <hemisphereLight args={['#FFFFFF', '#DDE3DF', 0.75]} />
+      <directionalLight ref={sun} position={[center[0] - span * 0.9, span * 0.85, center[1] - span * 0.45]} intensity={1.9} castShadow
+        shadow-mapSize={[4096, 4096]} shadow-bias={-0.0004} shadow-normalBias={0.02}
         shadow-camera-left={-span} shadow-camera-right={span} shadow-camera-top={span} shadow-camera-bottom={-span}
         shadow-camera-near={0.5} shadow-camera-far={span * 4} />
       <Controls center={center} board={bounds} view={p.view} controlsRef={controlsRef} />
@@ -502,7 +516,8 @@ function Scene(p: FloorSceneProps) {
 export function FloorScene({ className = '', ...props }: FloorSceneProps & { className?: string }) {
   return (
     <div className={`relative overflow-hidden rounded-[18px] border border-linea bg-white ${className}`}>
-      <Canvas shadows flat frameloop="demand" onCreated={(s) => { if (import.meta.env.DEV) (window as unknown as { __r3f: unknown }).__r3f = s }} dpr={[1, 2]} camera={{ fov: 32, near: 0.1, far: 500, position: [10, 14, 22] }}
+      <Canvas shadows="soft" frameloop="demand"
+        gl={{ antialias: true, toneMapping: THREE.NeutralToneMapping, toneMappingExposure: 0.9, outputColorSpace: THREE.SRGBColorSpace }} onCreated={(s) => { if (import.meta.env.DEV) (window as unknown as { __r3f: unknown }).__r3f = s }} dpr={[1, 2]} camera={{ fov: 32, near: 0.1, far: 500, position: [10, 14, 22] }}
         onPointerMissed={(e) => { if (e.type === 'click') props.onSelect?.(null) }}>
         <Scene {...props} />
       </Canvas>

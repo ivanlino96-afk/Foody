@@ -7,6 +7,8 @@ import { KitchenBoardView } from '../features/kitchen/views/KitchenBoardView'
 import { AdminLayout } from '../features/admin/AdminLayout'
 import { DashboardView } from '../features/admin/views/DashboardView'
 import { OrdersView } from '../features/admin/views/OrdersView'
+import { MenuAdminView } from '../features/admin/views/MenuAdminView'
+import { IngredientsExtrasView } from '../features/admin/views/IngredientsExtrasView'
 import { WaiterView } from '../features/waiter/views/WaiterView'
 import { DinerProvider } from '../features/diner/DinerContext'
 import { DinerStatusGate } from '../features/diner/DinerStatusGate'
@@ -67,6 +69,8 @@ export function AppRoutes() {
         <Route path="/admin" element={<RequireRole roles={['admin']}><AdminLayout /></RequireRole>}>
           <Route index element={<DashboardView />} />
           <Route path="ordenes" element={<OrdersView />} />
+          <Route path="menu" element={<MenuAdminView />} />
+          <Route path="ingredientes" element={<IngredientsExtrasView />} />
           <Route path="disponibilidad" element={<AvailabilityView />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Route>

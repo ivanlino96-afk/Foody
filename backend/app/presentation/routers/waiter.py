@@ -2,12 +2,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Response, status
 
-from app.application.dto import ServiceCallView, TableMapView
+from app.application.dto import DinerSessionView, ServiceCallView, TableMapView
 from app.application.ports import Clock, UnitOfWork
 from app.application.use_cases.advance_order import advance_order, cancel_order
 from app.application.use_cases.floor_layout import list_floor_areas
 from app.application.use_cases.payments import register_manual_payment
-from app.application.use_cases.queries import get_tables_map
+from app.application.use_cases.queries import get_table_account, get_tables_map
 from app.application.use_cases.service_calls import attend_service_call, list_pending_calls, request_bill_by_staff
 from app.application.use_cases.tables import open_table, release_table, reopen_table
 from app.domain.enums import OrderStatus, StaffRole
@@ -22,6 +22,11 @@ waiter_only = require_roles(StaffRole.WAITER)
 @router.get("/tables", dependencies=[Depends(waiter_only)])
 def list_tables(uow: UnitOfWork = Depends(get_uow)) -> list[TableMapView]:
     return get_tables_map(uow)
+
+
+@router.get("/tables/{table_id}/account", dependencies=[Depends(waiter_only)])
+def table_account(table_id: UUID, uow: UnitOfWork = Depends(get_uow)) -> DinerSessionView | None:
+    return get_table_account(uow, table_id)
 
 
 @router.get("/floor-areas", dependencies=[Depends(waiter_only)])

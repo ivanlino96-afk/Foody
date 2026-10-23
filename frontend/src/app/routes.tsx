@@ -12,6 +12,7 @@ import { IngredientsExtrasView } from '../features/admin/views/IngredientsExtras
 import { SettingsView } from '../features/admin/views/SettingsView'
 import { StaffView } from '../features/admin/views/StaffView'
 import { FloorEditorView } from '../features/admin/views/FloorEditorView'
+import { LiveFloorView } from '../features/admin/views/LiveFloorView'
 import { TablesAdminView } from '../features/admin/views/TablesAdminView'
 import { WaiterView } from '../features/waiter/views/WaiterView'
 import { DinerProvider } from '../features/diner/DinerContext'
@@ -72,6 +73,7 @@ export function AppRoutes() {
         <Route path="/mesero" element={<RequireRole roles={['waiter']}><WaiterView /></RequireRole>} />
         <Route path="/admin" element={<RequireRole roles={['admin']}><AdminLayout /></RequireRole>}>
           <Route index element={<DashboardView />} />
+          <Route path="en-vivo" element={<LiveFloorView />} />
           <Route path="ordenes" element={<OrdersView />} />
           <Route path="menu" element={<MenuAdminView />} />
           <Route path="ingredientes" element={<IngredientsExtrasView />} />

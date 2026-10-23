@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from app.application.dto import (
     DinerExtraView,
     DinerIngredientView,
@@ -11,7 +13,7 @@ from app.application.dto import (
     TableMapView,
 )
 from app.application.ports import UnitOfWork
-from app.domain.entities import MenuItem, Order
+from app.domain.entities import DiningTable, MenuItem, Order
 from app.domain.enums import OrderStatus, ServiceCallType, TableStatus
 from app.domain.errors import NotFound
 from app.domain.services.availability import extra_available, item_availability
@@ -69,22 +71,34 @@ def get_diner_menu(uow: UnitOfWork) -> list[DinerMenuCategoryView]:
 
 
 def _round_view(order: Order) -> DinerRoundView:
-    return DinerRoundView(order.id, order.round_number, order.status, [_line_view(line) for line in order.lines],
+    return DinerRoundView(order.id, order.daily_number, order.round_number, order.status, [_line_view(line) for line in order.lines],
                           order.subtotal_cents, order.created_at)
+
+
+def _session_view(uow: UnitOfWork, table: DiningTable) -> DinerSessionView | None:
+    if table.current_session_id is None:
+        return None
+    session = uow.sessions.get(table.current_session_id)
+    if session is None or session.closed_at is not None:
+        return None
+    rounds = [_round_view(o) for o in uow.orders.list_by_session(session.id)]
+    pending = [t.value for t in ServiceCallType if uow.service_calls.pending_for_session(session.id, t)]
+    return DinerSessionView(rounds, session.subtotal_cents, session.tip_cents, session.paid_cents,
+                            balance_cents(session), table.status == TableStatus.BILL_REQUESTED, pending)
 
 
 def get_diner_session(uow: UnitOfWork, qr_token: str) -> DinerSessionView | None:
     with uow:
-        table = _table_by_qr(uow, qr_token)
-        if table.current_session_id is None:
-            return None
-        session = uow.sessions.get(table.current_session_id)
-        if session is None or session.closed_at is not None:
-            return None
-        rounds = [_round_view(o) for o in uow.orders.list_by_session(session.id)]
-        pending = [t.value for t in ServiceCallType if uow.service_calls.pending_for_session(session.id, t)]
-        return DinerSessionView(rounds, session.subtotal_cents, session.tip_cents, session.paid_cents,
-                                balance_cents(session), table.status == TableStatus.BILL_REQUESTED, pending)
+        return _session_view(uow, _table_by_qr(uow, qr_token))
+
+
+def get_table_account(uow: UnitOfWork, table_id: UUID) -> DinerSessionView | None:
+    """The open account of a table for staff: every round with its lines, served ones included."""
+    with uow:
+        table = uow.tables.get(table_id)
+        if table is None:
+            raise NotFound(details={"table_id": str(table_id)})
+        return _session_view(uow, table)
 
 
 def get_active_orders(uow: UnitOfWork) -> list[KitchenOrderView]:

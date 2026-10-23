@@ -2,6 +2,7 @@ import type {
   AdminTable, AvailabilityBoard, AvailabilityEntity, Dashboard, FloorAreaRow, FloorLayout, KitchenOrder, OrderHistoryRow, PaymentMethod,
   PaymentResult, RestaurantSettings, ServiceCallRow, StaffProfile, StaffRole, StaffRow, TableMapRow,
 } from '../../domain/staffTypes'
+import type { DinerSession } from '../../domain/types'
 import { ApiError, request, requestBlob } from './http'
 
 export type CatalogPath = 'categories' | 'ingredients' | 'extras' | 'menu-items'
@@ -47,6 +48,7 @@ export function staffApi(getToken: () => string | null | Promise<string | null>,
     setKitchenStatus: (id: string, status: 'preparing' | 'ready') => post(`/kitchen/orders/${id}/status`, { status }),
     // waiter
     tables: () => call<TableMapRow[]>('/waiter/tables'),
+    tableAccount: (id: string) => call<DinerSession | null>(`/waiter/tables/${id}/account`),
     openTable: (id: string, guests?: number) => post(`/waiter/tables/${id}/open`, guests ? { guests_count: guests } : {}),
     reopenTable: (id: string) => post(`/waiter/tables/${id}/reopen`, {}),
     releaseTable: (id: string) => post(`/waiter/tables/${id}/release`),

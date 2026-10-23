@@ -57,6 +57,7 @@ export interface OrderLine {
 
 export interface DinerRound {
   order_id: string
+  daily_number: number
   round_number: number
   status: OrderStatus
   lines: OrderLine[]

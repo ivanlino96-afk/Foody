@@ -81,6 +81,7 @@ class OrderLineView:
 @dataclass(frozen=True)
 class DinerRoundView:
     order_id: UUID
+    daily_number: int
     round_number: int
     status: OrderStatus
     lines: list[OrderLineView]

@@ -13,6 +13,8 @@ export interface TableOverlay {
   color: string
   badge?: string
   badgeColor?: string
+  /** People drawn sitting at the table, filling seats in order (live floor view). */
+  seated?: number
 }
 
 export type FloorSelection = { type: 'table' | 'area'; key: string } | null
@@ -165,6 +167,29 @@ function Chair({ x, z, bx, bz, stool, high }: { x: number; z: number; bx: number
   )
 }
 
+const SKIN = new THREE.MeshStandardMaterial({ color: '#E6D5BF', roughness: 0.7 })
+const CLOTH = new THREE.MeshStandardMaterial({ color: '#2F4A3A', roughness: 0.75 })
+
+/** A seated diner, maquette style: torso, head and thighs facing the table. */
+function Person({ x, z, bx, bz, high }: { x: number; z: number; bx: number; bz: number; high?: boolean }) {
+  const seat = high ? 0.81 : 0.46
+  return (
+    <group position={[x, 0, z]} rotation={[0, Math.atan2(bx, bz), 0]}>
+      <mesh material={CLOTH} position={[0, seat + 0.27, 0.04]} castShadow>
+        <capsuleGeometry args={[0.15, 0.24, 6, 16]} />
+      </mesh>
+      <mesh material={SKIN} position={[0, seat + 0.66, 0.03]} castShadow>
+        <sphereGeometry args={[0.12, 24, 16]} />
+      </mesh>
+      {[-0.08, 0.08].map((dx) => (
+        <mesh key={dx} material={CLOTH} position={[dx, seat + 0.07, -0.13]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <capsuleGeometry args={[0.065, 0.22, 4, 10]} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 function TableModel({ table, overlay, selected, editable, fonts, onPick, onDragStart }: {
   table: FloorTable
   overlay?: TableOverlay
@@ -229,6 +254,12 @@ function TableModel({ table, overlay, selected, editable, fonts, onPick, onDragS
             high={table.kind === 'high'} />
         ))
       )}
+      {table.kind !== 'booth' && list.slice(0, overlay?.seated ?? 0).map((s, i) => (
+        <Person key={`p${i}`} x={s.x} z={s.y} bx={s.bx} bz={s.by} high={table.kind === 'bar' || table.kind === 'high'} />
+      ))}
+      {table.kind === 'booth' && Array.from({ length: Math.min(overlay?.seated ?? 0, 2) }, (_, i) => (
+        <Person key={`p${i}`} x={0} z={(i ? 1 : -1) * (depth / 2 + 0.3)} bx={0} bz={i ? 1 : -1} />
+      ))}
       <group rotation={[0, (table.rotation * Math.PI) / 180, 0]}>
         <Decal text={table.code} height={Math.min(0.42, depth * 0.55)} maxWidth={width * 0.8} y={topH + 0.03}
           color={label} fonts={fonts} />

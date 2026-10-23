@@ -97,3 +97,17 @@ def test_waiter_cannot_toggle_availability(client, waiter, taco):
 def test_unknown_availability_entity_is_422(client, kitchen):
     r = client.patch(f"/api/v1/availability/table/{uuid4()}", json={"is_available": False}, headers=auth(kitchen))
     assert r.status_code == 422
+
+
+def test_table_account_lists_every_round_for_staff(client, waiter, admin, m9, taco):
+    assert client.get(f"/api/v1/waiter/tables/{m9.id}/account", headers=auth(waiter)).json() is None
+    open_and_order(client, waiter, m9, taco)
+    order_id = client.get(f"{DINER}/session").json()["rounds"][0]["order_id"]
+    for status in ("preparing", "ready"):
+        client.post(f"/api/v1/kitchen/orders/{order_id}/status", json={"status": status}, headers=auth(admin))
+    assert client.post(f"/api/v1/waiter/orders/{order_id}/served", headers=auth(waiter)).status_code == 200
+    account = client.get(f"/api/v1/waiter/tables/{m9.id}/account", headers=auth(admin)).json()
+    assert account["subtotal_cents"] == 8000
+    assert [(r["status"], [line["quantity"] for line in r["lines"]]) for r in account["rounds"]] == [("served", [2])]
+    assert account["rounds"][0]["daily_number"] >= 1
+    assert client.get(f"/api/v1/waiter/tables/{uuid4()}/account", headers=auth(waiter)).status_code == 404

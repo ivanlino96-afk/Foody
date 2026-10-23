@@ -1,14 +1,14 @@
 import type { ComponentType, SVGProps } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import {
-  GridIcon, LeafIcon, LogoutIcon, MapIcon, QrIcon, ReceiptIcon, SlidersIcon, ToggleIcon, UsersIcon, UtensilsIcon,
+  GridIcon, LeafIcon, LogoutIcon, MapIcon, PulseIcon, QrIcon, ReceiptIcon, SlidersIcon, ToggleIcon, UsersIcon, UtensilsIcon,
 } from '../../shared/ui/icons'
 import { useAuth } from '../auth/AuthContext'
 
 type NavIcon = ComponentType<SVGProps<SVGSVGElement> & { size?: number }>
 
 const NAV: { title: string; items: [string, string, NavIcon][] }[] = [
-  { title: 'Inicio', items: [['/admin', 'Dashboard', GridIcon], ['/admin/ordenes', 'Órdenes', ReceiptIcon]] },
+  { title: 'Inicio', items: [['/admin', 'Dashboard', GridIcon], ['/admin/en-vivo', 'En vivo', PulseIcon], ['/admin/ordenes', 'Órdenes', ReceiptIcon]] },
   { title: 'Catálogo', items: [
     ['/admin/menu', 'Menú', UtensilsIcon],
     ['/admin/ingredientes', 'Ingredientes y extras', LeafIcon],

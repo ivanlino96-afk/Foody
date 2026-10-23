@@ -7,7 +7,7 @@ import { DinerWrapper } from '../../../test/renderDiner'
 import { useAccountViewModel } from './useAccountViewModel'
 
 const round = (n: number, status: DinerSession['rounds'][number]['status'], cents: number) => ({
-  order_id: `o${n}`, round_number: n, status, subtotal_cents: cents, created_at: '2026-10-23T18:00:00Z',
+  order_id: `o${n}`, daily_number: n, round_number: n, status, subtotal_cents: cents, created_at: '2026-10-23T18:00:00Z',
   lines: [{ item_name: 'Tacos al pastor', quantity: 2, note: null, extras: ['Queso extra'], removed: ['Cebolla'], line_total_cents: cents }],
 })
 

@@ -235,9 +235,9 @@ export function FloorEditorView() {
             <div className="pointer-events-auto flex flex-wrap items-center gap-1 rounded-[14px] bg-white/95 p-1.5 shadow-[0_6px_24px_rgba(27,30,27,0.12)] backdrop-blur">
               <span className="px-2 text-xs font-extrabold tracking-wide text-musgo uppercase">Agregar</span>
               {TABLE_ORDER.map((k) => (
-                <button key={k} type="button" className={`${CHIP} hover:bg-hoja-claro`} onClick={() => vm.addTable(k)}
+                <button key={k} type="button" className={`${CHIP} hover:bg-hoja-claro`} onClick={() => vm.addTable(k)} title={TABLE_KINDS[k].label}
                   aria-label={`Agregar ${TABLE_KINDS[k].label.toLowerCase()}`}>
-                  <KindIcon kind={k} size={18} /><span className="hidden sm:inline">{TABLE_KINDS[k].label.replace('Mesa redonda', 'Redonda')}</span>
+                  <KindIcon kind={k} size={18} /><span className="hidden min-[1400px]:inline">{TABLE_KINDS[k].label.replace('Mesa redonda', 'Redonda')}</span>
                 </button>
               ))}
               <span className="mx-1 h-6 w-px bg-linea" />

@@ -7,10 +7,11 @@ from app.application.dto import DinerMenuCategoryView, DinerSessionView, DinerTa
 from app.application.ports import Clock, UnitOfWork
 from app.application.use_cases.place_order import PlaceOrderCommand, place_order
 from app.application.use_cases.queries import get_diner_menu, get_diner_session, get_diner_table
+from app.application.use_cases.service_calls import request_service_call
 from app.domain.entities import Order
 from app.presentation.deps import get_clock, get_uow
 from app.presentation.rate_limit import limit_orders
-from app.presentation.schemas import PlacedOrderOut, PlaceOrderIn
+from app.presentation.schemas import PlacedOrderOut, PlaceOrderIn, ServiceCallIn, ServiceCallOut
 
 QrToken = Annotated[str, Path(pattern=r"^[A-Za-z0-9_-]{1,128}$")]
 
@@ -52,3 +53,10 @@ def create_order(qr_token: QrToken, body: PlaceOrderIn, uow: UnitOfWork = Depend
         if existing is None:
             raise
         return _placed(existing)
+
+
+@router.post("/service-calls", status_code=status.HTTP_201_CREATED, dependencies=[Depends(limit_orders)])
+def create_service_call(qr_token: QrToken, body: ServiceCallIn, uow: UnitOfWork = Depends(get_uow),
+                        clock: Clock = Depends(get_clock)) -> ServiceCallOut:
+    call = request_service_call(uow, clock, qr_token, body.type)
+    return ServiceCallOut(id=call.id, type=call.type, created_at=call.created_at)

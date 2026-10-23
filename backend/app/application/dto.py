@@ -120,6 +120,9 @@ class TableMapView:
     status_changed_at: datetime
     pending_orders: int
     ready_orders: int
+    session_id: UUID | None = None
+    balance_cents: int = 0
+    pending_calls: int = 0
 
 
 @dataclass(frozen=True)

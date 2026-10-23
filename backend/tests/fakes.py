@@ -1,4 +1,5 @@
 import copy
+import dataclasses
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
@@ -19,7 +20,7 @@ from app.domain.entities import (
     StatusChange,
     TableSession,
 )
-from app.domain.enums import OrderStatus, StaffRole, TableStatus
+from app.domain.enums import AvailabilityEntity, OrderStatus, StaffRole, TableStatus
 
 
 def make_ingredient(name: str = "Cebolla", available: bool = True) -> Ingredient:
@@ -235,6 +236,10 @@ class _Availability:
         self._uow = uow
 
     def set_available(self, entity, entity_id, is_available, staff_id):
+        items = self._uow.state.items
+        if entity == AvailabilityEntity.MENU_ITEM and entity_id in items:
+            items[entity_id] = dataclasses.replace(items[entity_id], is_available=is_available)
+            return True
         if (entity, entity_id) not in self._uow.state.availability:
             return False
         self._uow.state.availability[(entity, entity_id)] = is_available

@@ -10,7 +10,7 @@ from app.infrastructure.db.engine import make_engine
 from app.infrastructure.scheduler import start_scheduler
 from app.presentation.errors import register_error_handlers
 from app.presentation.rate_limit import OrderRateLimiter
-from app.presentation.routers import admin, availability, diner, kitchen, waiter
+from app.presentation.routers import admin, availability, diner, kitchen, staff, waiter
 
 
 @asynccontextmanager
@@ -45,7 +45,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    for router in (diner.router, kitchen.router, waiter.router, availability.router, admin.router):
+    for router in (staff.router, diner.router, kitchen.router, waiter.router, availability.router, admin.router):
         api.include_router(router)
     app.include_router(api)
     return app

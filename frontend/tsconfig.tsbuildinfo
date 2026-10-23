@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/domain/cart.test.ts","./src/domain/cart.ts","./src/domain/money.test.ts","./src/domain/money.ts","./src/domain/types.ts","./src/test/setup.ts","./vite.config.ts"],"version":"5.8.3"}

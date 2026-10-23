@@ -36,7 +36,8 @@ def clock() -> FixedClock:
 @pytest.fixture
 def app(uow, clock):
     application = create_app(Settings(database_url="sqlite://", supabase_url="http://supabase.test",
-                                      supabase_jwt_secret=JWT_SECRET, enable_scheduler=False))
+                                      supabase_jwt_secret=JWT_SECRET, enable_scheduler=False,
+                                      supabase_service_role_key=""))  # never the developer's backend/.env key
     application.dependency_overrides[get_uow] = lambda: uow
     application.dependency_overrides[get_clock] = lambda: clock
     return application

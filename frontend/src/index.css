@@ -51,3 +51,10 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .splash * { animation: none !important; opacity: 1 !important; transform: none !important }
 }
+
+/* Printing a table QR: only the print sheet (portaled to <body>) goes to paper. */
+@media print {
+  body:has(.print-sheet) > #root {
+    display: none;
+  }
+}

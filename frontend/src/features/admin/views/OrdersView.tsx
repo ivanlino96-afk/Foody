@@ -1,7 +1,8 @@
+import { SearchIcon } from '../../../shared/ui/icons'
 import { AdminTitle, CARD } from '../AdminLayout'
 import { useOrdersViewModel, type OrderFilters } from '../viewmodels/useOrdersViewModel'
 
-const FIELD = 'min-h-11 rounded-[10px] border border-linea bg-white px-3 text-base'
+const FIELD = 'min-h-9 rounded-full bg-white px-3 text-sm text-carbon outline-none'
 const GRID = 'grid grid-cols-[64px_56px_1fr_120px_64px_96px] items-center gap-3 md:grid-cols-[80px_80px_1fr_140px_110px_110px]'
 
 function Rows({ vm }: { vm: ReturnType<typeof useOrdersViewModel> }) {
@@ -38,17 +39,28 @@ export function OrdersView() {
   const set = <K extends keyof OrderFilters>(k: K) => (e: { target: { value: string } }) => vm.setFilter(k, e.target.value as OrderFilters[K])
   return (
     <>
-      <AdminTitle title="Órdenes" />
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col text-sm font-semibold">Desde<input type="date" className={FIELD} value={vm.filters.from} onChange={set('from')} /></label>
-        <label className="flex flex-col text-sm font-semibold">Hasta<input type="date" className={FIELD} value={vm.filters.to} onChange={set('to')} /></label>
-        <label className="flex flex-col text-sm font-semibold">Estado
-          <select className={FIELD} value={vm.filters.status} onChange={set('status')}>
-            <option value="">Todos</option>
-            {vm.statuses.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
+      <AdminTitle title="Órdenes">
+        {!vm.loading && <span className="text-sm text-musgo tabular-nums">{vm.rows.length} {vm.rows.length === 1 ? 'orden' : 'órdenes'}</span>}
+      </AdminTitle>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1 rounded-full bg-hoja-claro p-1">
+          <input type="date" aria-label="Desde" className={`${FIELD} !bg-transparent`} value={vm.filters.from} onChange={set('from')} />
+          <span className="text-sm text-apagado" aria-hidden="true">a</span>
+          <input type="date" aria-label="Hasta" className={`${FIELD} !bg-transparent`} value={vm.filters.to} onChange={set('to')} />
+        </div>
+        <div role="group" aria-label="Estado" className="flex gap-1 overflow-x-auto rounded-full bg-hoja-claro p-1">
+          {[{ value: '', label: 'Todas' }, ...vm.statuses].map((s) => (
+            <button key={s.value} type="button" aria-pressed={vm.filters.status === s.value} onClick={() => set('status')({ target: { value: s.value } })}
+              className={`min-h-9 flex-none rounded-full px-4 text-sm whitespace-nowrap transition-colors ${vm.filters.status === s.value
+                ? 'bg-white font-semibold text-carbon shadow-[0_1px_2px_rgba(27,30,27,0.08)]' : 'font-medium text-musgo hover:text-carbon'}`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <label className="ml-auto flex items-center gap-2 rounded-full bg-hoja-claro pl-4 text-musgo">
+          <SearchIcon size={16} />
+          <input aria-label="Mesa" placeholder="Mesa, ej. M1" className={`${FIELD} w-32 !bg-transparent !pl-0`} value={vm.filters.table} onChange={set('table')} />
         </label>
-        <label className="flex flex-col text-sm font-semibold">Mesa<input className={`${FIELD} w-28`} placeholder="M1" value={vm.filters.table} onChange={set('table')} /></label>
       </div>
       {vm.error && <p role="alert" className="m-0 text-sm font-semibold text-[#B42318]">{vm.error}</p>}
       <section className={CARD}><Rows vm={vm} /></section>

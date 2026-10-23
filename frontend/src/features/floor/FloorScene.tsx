@@ -30,10 +30,10 @@ export interface FloorSceneProps {
   onResizeArea?(key: string, dx: number, dy: number, done: boolean): void
 }
 
-// Maquette look: matte white furniture on an off-white plinth over a wooden base.
+// Maquette look: matte white furniture on a thin white slab floating over the page.
 const WHITE = new THREE.MeshStandardMaterial({ color: '#FBFAF7', roughness: 0.92 })
 const SOFT = new THREE.MeshStandardMaterial({ color: '#F1EEE8', roughness: 0.95 })
-const PLINTH = new THREE.MeshStandardMaterial({ color: '#F6F4EF', roughness: 0.9 })
+const PLINTH = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.9 })
 const WOOD = new THREE.MeshStandardMaterial({ color: '#A8784C', roughness: 0.65 })
 const FOREST = new THREE.MeshStandardMaterial({ color: '#2F4A3A', roughness: 0.8 })
 const STONE = new THREE.MeshStandardMaterial({ color: '#EFEDE8', roughness: 0.9 })
@@ -46,7 +46,7 @@ function devBase(): FloorBase | null {
   return b && ['madera', 'flotante', 'bosque', 'galeria', 'piso'].includes(b) ? (b as FloorBase) : null
 }
 const ACCENT = new THREE.MeshBasicMaterial({ color: '#2F4A3A' })
-const HANDLE = new THREE.MeshStandardMaterial({ color: '#A8784C', roughness: 0.5 })
+const HANDLE = new THREE.MeshStandardMaterial({ color: '#2F4A3A', roughness: 0.5 })
 const TOP_H = 0.75
 const BAR_H = 1.05
 
@@ -433,7 +433,7 @@ function Base({ base, center, width, depth, span, onClear }: {
   )
   switch (base) {
     case 'flotante': // a thin white slab casting a soft shadow on the page
-      return <>{plinth(1.2, 0.3, PLINTH)}{ground(-1.1, 0.16)}</>
+      return <>{plinth(1.2, 0.3, PLINTH)}{ground(-1.1, 0.09)}</>
     case 'bosque': // white plinth on the brand-green stand
       return <>{plinth(2.6, 0.5, FOREST, -0.45)}{plinth(1.4, 0.2, PLINTH, -0.1)}{ground(-0.7, 0.12)}</>
     case 'galeria': // one tall white pedestal with a hairline edge, like a museum model
@@ -471,14 +471,14 @@ function Scene(p: FloorSceneProps) {
   return (
     <>
       <color attach="background" args={['#FFFFFF']} />
-      <hemisphereLight args={['#FFFFFF', '#E6DFD2', 1.8]} />
+      <hemisphereLight args={['#FFFFFF', '#E8ECE9', 1.8]} />
       <directionalLight ref={sun} position={[center[0] - span * 0.9, span * 0.85, center[1] - span * 0.45]} intensity={1.45} castShadow
         shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02}
         shadow-camera-left={-span} shadow-camera-right={span} shadow-camera-top={span} shadow-camera-bottom={-span}
         shadow-camera-near={0.5} shadow-camera-far={span * 4} />
       <Controls center={center} board={bounds} view={p.view} controlsRef={controlsRef} />
 
-      <Base base={devBase() ?? p.base ?? 'madera'} center={center} width={bounds.width} depth={bounds.depth} span={span}
+      <Base base={devBase() ?? p.base ?? 'flotante'} center={center} width={bounds.width} depth={bounds.depth} span={span}
         onClear={() => p.onSelect?.(null)} />
 
       {p.areas.map((a) => (

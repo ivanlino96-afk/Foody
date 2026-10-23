@@ -87,7 +87,18 @@ export function LiveFloorView() {
   const s = vm.stats
   return (
     <>
-      <AdminTitle title="En vivo"><LiveDot connected={vm.connected} /></AdminTitle>
+      <AdminTitle title="En vivo">
+        <LiveDot connected={vm.connected} />
+        <div role="group" aria-label="Vista del plano" className="ml-auto flex gap-1 rounded-full bg-hoja-claro p-1">
+          {([['3d', 'Maqueta 3D'], ['top', 'Desde arriba']] as const).map(([v, label]) => (
+            <button key={v} type="button" aria-pressed={vm.view === v} onClick={() => vm.setView(v)}
+              className={`min-h-9 rounded-full px-4 text-sm whitespace-nowrap transition-colors ${vm.view === v
+                ? 'bg-white font-semibold text-carbon shadow-[0_1px_2px_rgba(27,30,27,0.08)]' : 'font-medium text-musgo hover:text-carbon'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </AdminTitle>
       {vm.error && <p role="alert" className="m-0 text-sm font-semibold text-[#B42318]">{vm.error}</p>}
 
       <section aria-label="Resumen del salón"
@@ -108,7 +119,7 @@ export function LiveFloorView() {
       <div className="grid items-start gap-[18px] xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex flex-col gap-2">
           <Suspense fallback={<div className={`${PLAN_H} animate-pulse rounded-[18px] bg-hoja-claro`} />}>
-            <FloorScene className={PLAN_H} view="3d" areas={vm.areas} tables={vm.planTables} overlays={vm.overlays}
+            <FloorScene className={PLAN_H} view={vm.view} areas={vm.areas} tables={vm.planTables} overlays={vm.overlays}
               selected={vm.selected ? { type: 'table', key: vm.selected.row.id } : null}
               onSelect={(sel) => vm.select(sel?.type === 'table' ? sel.key : null)} />
           </Suspense>

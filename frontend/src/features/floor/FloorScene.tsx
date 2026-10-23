@@ -15,6 +15,8 @@ export interface TableOverlay {
   badgeColor?: string
   /** People drawn sitting at the table, filling seats in order (live floor view). */
   seated?: number
+  /** Small rounded card floating over the table: a bold title and a status line with its colour dot. */
+  card?: { title: string; status: string; dot: string }
 }
 
 export type FloorSelection = { type: 'table' | 'area'; key: string } | null
@@ -132,6 +134,59 @@ function Badge({ text, color, y, fonts }: { text: string; color: string; y: numb
   const { texture, aspect } = useTextTexture(text, { color: '#FFFFFF', bg: color, pill: true, weight: 800 }, fonts)
   if (!texture) return null
   const h = 0.58
+  return (
+    <sprite position={[0, y, 0]} scale={[h * aspect, h, 1]} renderOrder={5}>
+      <spriteMaterial map={texture} depthTest={false} transparent />
+    </sprite>
+  )
+}
+
+function useCardTexture(card: { title: string; status: string; dot: string }, fonts: boolean) {
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return { texture: null, aspect: 1 }
+    const pad = 34
+    const titleFont = `700 64px ${FONT}`
+    const statusFont = `500 44px ${FONT}`
+    ctx.font = titleFont
+    const tw = ctx.measureText(card.title).width
+    ctx.font = statusFont
+    const sw = ctx.measureText(card.status).width + 34
+    canvas.width = Math.ceil(Math.max(tw, sw) + pad * 2)
+    canvas.height = 172
+    ctx.fillStyle = '#FFFFFF'
+    ctx.strokeStyle = '#E3DED3'
+    ctx.lineWidth = 4
+    ctx.beginPath()
+    ctx.roundRect(2, 2, canvas.width - 4, canvas.height - 4, 30)
+    ctx.fill()
+    ctx.stroke()
+    ctx.textBaseline = 'middle'
+    ctx.fillStyle = '#1B1E1B'
+    ctx.font = titleFont
+    ctx.fillText(card.title, pad, 60)
+    ctx.fillStyle = card.dot
+    ctx.beginPath()
+    ctx.arc(pad + 10, 122, 10, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#5A615B'
+    ctx.font = statusFont
+    ctx.fillText(card.status, pad + 34, 124)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.colorSpace = THREE.SRGBColorSpace
+    tex.anisotropy = 8
+    return { texture: tex, aspect: canvas.width / canvas.height }
+    // `fonts` forces a repaint once the web font is ready.
+  }, [card.title, card.status, card.dot, fonts]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => texture.texture?.dispose(), [texture])
+  return texture
+}
+
+function Card({ card, y, fonts }: { card: { title: string; status: string; dot: string }; y: number; fonts: boolean }) {
+  const { texture, aspect } = useCardTexture(card, fonts)
+  if (!texture) return null
+  const h = 0.95
   return (
     <sprite position={[0, y, 0]} scale={[h * aspect, h, 1]} renderOrder={5}>
       <spriteMaterial map={texture} depthTest={false} transparent />
@@ -263,7 +318,8 @@ function TableModel({ table, overlay, selected, editable, fonts, onPick, onDragS
       <group rotation={[0, (table.rotation * Math.PI) / 180, 0]}>
         <Decal text={table.code} height={Math.min(0.42, depth * 0.55)} maxWidth={width * 0.8} y={topH + 0.03}
           color={label} fonts={fonts} />
-        {overlay?.badge && <Badge text={overlay.badge} color={overlay.badgeColor ?? '#1B1E1B'} y={topH + 1.0} fonts={fonts} />}
+        {overlay?.card && <Card card={overlay.card} y={topH + 1.25} fonts={fonts} />}
+        {overlay?.badge && !overlay.card && <Badge text={overlay.badge} color={overlay.badgeColor ?? '#1B1E1B'} y={topH + 1.0} fonts={fonts} />}
       </group>
     </group>
   )

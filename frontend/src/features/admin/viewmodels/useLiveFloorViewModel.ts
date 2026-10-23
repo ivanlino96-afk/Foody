@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FloorTable } from '../../../domain/floor'
-import { formatMoney } from '../../../domain/money'
 import type { TableMapRow } from '../../../domain/staffTypes'
 import type { DinerSession } from '../../../domain/types'
 import { useAuth } from '../../auth/AuthContext'
-import type { TableOverlay } from '../../floor/FloorScene'
+import type { FloorView, TableOverlay } from '../../floor/FloorScene'
 import { TABLE_STATUS } from '../../waiter/viewmodels/tableStatus'
 import { useFloorAreas } from '../../waiter/viewmodels/useFloorAreas'
 import { minutesSince, useWaiterFeed } from '../../waiter/viewmodels/useWaiterFeed'
@@ -39,6 +38,7 @@ export function useLiveFloorViewModel() {
   const areas = useFloorAreas()
   const [accounts, setAccounts] = useState<Record<string, DinerSession | null>>({})
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [view, setView] = useState<FloorView>('3d')
 
   // Accounts reload only when an open table's money or orders move, not on every poll.
   const openRows = feed.tables.filter((t) => OPEN.has(t.status))
@@ -71,8 +71,7 @@ export function useLiveFloorViewModel() {
   const overlays = useMemo(() => Object.fromEntries(tables.map((t): [string, TableOverlay] => [t.row.id, t.open ? {
     color: t.status.color,
     seated: Math.min(SEATED, t.row.guests_count || SEATED, t.row.capacity ?? SEATED),
-    badge: [t.lastOrder, formatMoney(t.total)].filter(Boolean).join(' · '),
-    badgeColor: t.row.status === 'bill_requested' ? '#B42318' : '#2F4A3A',
+    card: { title: t.lastOrder ?? t.row.code, status: t.status.label, dot: t.status.color },
   } : { color: '#FBFAF7' }])), [tables])
 
   const busy = tables.filter((t) => t.open)
@@ -95,5 +94,7 @@ export function useLiveFloorViewModel() {
     legend: (['free', 'occupied', 'awaiting_order', 'served', 'bill_requested'] as const).map((s) => TABLE_STATUS[s]),
     selected: tables.find((t) => t.row.id === selectedId) ?? null,
     select: setSelectedId,
+    view,
+    setView,
   }
 }

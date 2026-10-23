@@ -34,10 +34,10 @@ function setup() {
 }
 
 describe('useLiveFloorViewModel', () => {
-  it('seats two diners and tags busy tables with the latest order and the account total', async () => {
+  it('seats two diners and tags busy tables with their latest order and status', async () => {
     const { result } = setup()
-    await waitFor(() => expect(result.current.overlays.t1?.badge).toBe('#052 · $387.00'))
-    expect(result.current.overlays.t1).toMatchObject({ seated: 2, badgeColor: '#2F4A3A' })
+    await waitFor(() => expect(result.current.overlays.t1?.card?.title).toBe('#052'))
+    expect(result.current.overlays.t1).toMatchObject({ seated: 2, card: { status: 'En espera de orden', dot: '#B98552' } })
     expect(result.current.overlays.t2).toEqual({ color: '#FBFAF7' })
     expect(result.current.stats).toMatchObject({ occupied: 1, total: 2, guests: 4, open: 38700 })
   })

@@ -59,6 +59,12 @@ function barsOf(d: Dashboard): Bar[] {
   }))
 }
 
+/** Gridline labels for the hourly chart, top to bottom: the peak, half of it and zero. */
+function scaleOf(d: Dashboard): string[] {
+  const max = Math.max(0, ...d.sales_by_hour.map((h) => h.sales_cents))
+  return max ? [shortMoney(max), shortMoney(max / 2), '$0'] : []
+}
+
 export function useDashboardViewModel() {
   const { api } = useAuth()
   const [date, setDate] = useState(todayInMexico)
@@ -104,6 +110,7 @@ export function useDashboardViewModel() {
     error,
     kpis: current ? kpisOf(current.dash, live, date) : [],
     bars: current ? barsOf(current.dash) : [],
+    scale: current ? scaleOf(current.dash) : [],
     cancelReasons: current?.dash.cancel_reasons ?? [],
     now: current?.now ?? null,
   }

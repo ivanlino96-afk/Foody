@@ -8,11 +8,11 @@ import { timeInMexico, todayInMexico } from '../../../shared/time'
 import { useAuth } from '../../auth/AuthContext'
 
 export const ORDER_STATUS: Record<OrderStatus, { label: string; tone: string }> = {
-  received: { label: 'Recibida', tone: 'bg-[#E0E7EF] text-[#2B4A6B]' },
-  preparing: { label: 'Preparando', tone: 'bg-[#F1E6D8] text-[#6F4A22]' },
-  ready: { label: 'Lista', tone: 'bg-[#E4ECE6] text-bosque-oscuro' },
-  served: { label: 'Servida', tone: 'bg-avena text-[#44483F]' },
-  cancelled: { label: 'Cancelada', tone: 'bg-[#FFE4E6] text-[#9F1239]' },
+  received: { label: 'Recibida', tone: 'bg-[#5B7FA6]' },
+  preparing: { label: 'Preparando', tone: 'bg-[#B98552]' },
+  ready: { label: 'Lista', tone: 'bg-[#5E8C6A]' },
+  served: { label: 'Servida', tone: 'bg-[#B9B4A8]' },
+  cancelled: { label: 'Cancelada', tone: 'bg-[#C2410C]' },
 }
 
 export interface OrderFilters {

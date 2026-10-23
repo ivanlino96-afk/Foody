@@ -8,17 +8,17 @@ function Rows({ vm }: { vm: ReturnType<typeof useOrdersViewModel> }) {
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[560px]">
-        <div className={`${GRID} border-b border-linea py-2 text-xs font-bold tracking-wide text-musgo uppercase`}>
+        <div className={`${GRID} border-b border-linea py-2 text-[11px] font-semibold tracking-[0.06em] text-musgo uppercase`}>
           <span>Orden</span><span>Mesa</span><span>Ronda</span><span>Estado</span><span>Hora</span><span className="text-right">Total</span>
         </div>
         {vm.rows.map((o) => (
-          <div key={o.id} className={`${GRID} border-b border-avena py-2 text-sm`}>
-            <span className="font-bold">{o.number}</span>
+          <div key={o.id} className={`${GRID} border-b border-linea/60 py-2.5 text-sm tabular-nums last:border-b-0`}>
+            <span className="font-semibold">{o.number}</span>
             <span>{o.table}</span>
-            <span className="text-[#44483F]">R{o.round}{o.cancelReason ? ` · ${o.cancelReason}` : ''}</span>
-            <span><span className={`rounded-md px-2 py-1 text-xs font-bold ${o.tone}`}>{o.status}</span></span>
+            <span className="text-musgo">R{o.round}{o.cancelReason ? ` · ${o.cancelReason}` : ''}</span>
+            <span className="flex items-center gap-2"><span className={`size-1.5 flex-none rounded-full ${o.tone}`} />{o.status}</span>
             <span className="text-musgo">{o.time}</span>
-            <span className="text-right font-bold">{o.total}</span>
+            <span className="text-right font-semibold">{o.total}</span>
           </div>
         ))}
         {!vm.loading && vm.rows.length === 0 && <p className="py-4 text-sm text-musgo">No hay órdenes con estos filtros.</p>}

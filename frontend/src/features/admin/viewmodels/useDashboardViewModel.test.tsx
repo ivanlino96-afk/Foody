@@ -50,6 +50,7 @@ describe('useDashboardViewModel', () => {
     expect(result.current.bars.map((b) => b.hour)).toEqual(['13h', '14h', '15h', '16h', '17h', '18h', '19h', '20h'])
     expect(result.current.bars.find((b) => b.hour === '20h')).toMatchObject({ label: '$3.9k', peak: true, pct: 100 })
     expect(result.current.bars.find((b) => b.hour === '14h')).toMatchObject({ label: '$0', pct: 0 })
+    expect(result.current.scale).toEqual(['$3.9k', '$1.9k', '$0'])
   })
 
   it('has no bars on a day without sales', async () => {

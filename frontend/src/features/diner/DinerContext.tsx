@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ApiError } from '../../data/api/http'
 import { dinerApi, type DinerApi } from '../../data/api/dinerApi'
 import { loadCart, saveCart } from '../../data/repositories/cartStore'
@@ -51,7 +51,8 @@ export function DinerProvider({ token, api: injected, children }: { token: strin
       })
       setStatus('ready')
     } catch (err) {
-      if (err instanceof ApiError && err.status === 404) setStatus('invalid_qr')
+      // 404: unknown token; 422: a token the API rejects by shape (truncated or mangled QR).
+      if (err instanceof ApiError && (err.status === 404 || err.status === 422)) setStatus('invalid_qr')
       else setStatus((s) => (s === 'ready' ? s : 'error'))
       throw err
     }
@@ -76,6 +77,15 @@ export function DinerProvider({ token, api: injected, children }: { token: strin
     setCartState(next)
     saveCart(token, next)
   }, [token])
+
+  // A restored cart may hold dishes that left the menu since; drop them once the first menu arrives.
+  const pruned = useRef(false)
+  useEffect(() => {
+    if (!menuLoaded || pruned.current) return
+    pruned.current = true
+    const known = new Set(Object.keys(itemsById))
+    if (cart.some((l) => !known.has(l.menuItemId))) setCart(cart.filter((l) => known.has(l.menuItemId)))
+  }, [menuLoaded, itemsById, cart, setCart])
 
   const value: DinerState = {
     token, api, status, table, session, sessionEnded, menu, itemsById, menuLoaded, refreshSession, refreshMenu,

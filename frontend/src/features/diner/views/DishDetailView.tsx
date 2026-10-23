@@ -6,7 +6,7 @@ import { useDiner } from '../DinerContext'
 import { useDishDetailViewModel } from '../viewmodels/useDishDetailViewModel'
 import { DishPhoto } from './DishPhoto'
 
-const stepper = 'flex h-9 w-9 items-center justify-center rounded-[10px] border-0'
+const stepper = 'flex h-11 w-11 items-center justify-center rounded-[10px] border-0'
 
 export function DishDetailView() {
   const { itemId = '' } = useParams()
@@ -99,15 +99,15 @@ export function DishDetailView() {
           <label htmlFor="nota" className="text-base font-extrabold">Nota para cocina</label>
           <textarea id="nota" rows={2} value={vm.note} onChange={(e) => vm.setNote(e.target.value)} maxLength={200}
             placeholder="Alergias, sin picante, término…"
-            className="resize-none rounded-xl border border-linea bg-[#F8F6F1] p-3 text-[15px] font-medium text-carbon" />
+            className="resize-none rounded-xl border border-linea bg-[#F8F6F1] p-3 text-base font-medium text-carbon" />
         </section>
       </div>
 
-      <footer className="sticky bottom-0 flex flex-none items-center gap-3 border-t border-linea bg-white px-4 pb-[22px] pt-3.5">
+      <footer className="sticky bottom-0 flex flex-none items-center gap-3 border-t border-linea bg-white px-4 pb-[max(22px,env(safe-area-inset-bottom))] pt-3.5">
         <div className="flex items-center gap-2.5 rounded-[14px] bg-arena p-1">
-          <button type="button" aria-label="Menos" onClick={vm.dec} className="flex h-11 w-10 items-center justify-center border-0 bg-transparent text-carbon"><MinusIcon /></button>
+          <button type="button" aria-label="Menos" onClick={vm.dec} className="flex h-11 w-11 items-center justify-center border-0 bg-transparent text-carbon"><MinusIcon /></button>
           <span className="w-[18px] text-center text-base font-extrabold">{vm.quantity}</span>
-          <button type="button" aria-label="Más" onClick={vm.inc} className="flex h-11 w-10 items-center justify-center border-0 bg-transparent text-carbon"><PlusIcon /></button>
+          <button type="button" aria-label="Más" onClick={vm.inc} className="flex h-11 w-11 items-center justify-center border-0 bg-transparent text-carbon"><PlusIcon /></button>
         </div>
         <button type="button" disabled={!vm.canAdd} onClick={() => { vm.add(); navigate(menuHref) }}
           className="flex flex-1 justify-between rounded-[14px] border-0 bg-bosque p-4 text-base font-bold text-white disabled:bg-linea disabled:text-musgo">

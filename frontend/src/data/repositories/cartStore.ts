@@ -36,3 +36,27 @@ export function clearCart(token: string): void {
     // ignore
   }
 }
+
+export interface SendAttempt {
+  signature: string
+  key: string
+}
+
+/** The idempotency key of an unconfirmed send outlives a reload so a retry cannot duplicate the order. */
+export function loadAttempt(token: string): SendAttempt | null {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(`foody.attempt.${token}`) ?? 'null') as SendAttempt | null
+    return parsed && typeof parsed.signature === 'string' && typeof parsed.key === 'string' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveAttempt(token: string, attempt: SendAttempt | null): void {
+  try {
+    if (attempt) sessionStorage.setItem(`foody.attempt.${token}`, JSON.stringify(attempt))
+    else sessionStorage.removeItem(`foody.attempt.${token}`)
+  } catch {
+    // ignore
+  }
+}

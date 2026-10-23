@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { fakeApi, notFound } from '../../../test/fakeApi'
 import { renderDiner } from '../../../test/renderDiner'
+import { DinerStatusGate } from '../DinerStatusGate'
 import { MenuView } from './MenuView'
 
 describe('MenuView', () => {
@@ -26,7 +27,7 @@ describe('MenuView', () => {
 
   it('shows invalid qr screen on 404', async () => {
     const api = fakeApi({ getTable: async () => { throw notFound() } })
-    renderDiner(<MenuView />, api)
+    renderDiner(<DinerStatusGate><MenuView /></DinerStatusGate>, api)
     expect(await screen.findByText('Este QR no es válido')).toBeInTheDocument()
   })
 

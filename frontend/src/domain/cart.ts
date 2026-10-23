@@ -14,6 +14,9 @@ export interface CartLine {
   note: string
 }
 
+/** The backend accepts 1–50 per line. */
+export const MAX_LINE_QUANTITY = 50
+
 type LineContent = Omit<CartLine, 'key'>
 
 /** Same dish with the same customization always yields the same key. */
@@ -52,7 +55,9 @@ export function addLine(lines: CartLine[], line: CartLine): CartLine[] {
   const incoming = makeLine(line)
   const existing = lines.find((l) => l.key === incoming.key)
   if (!existing) return [...lines, incoming]
-  return lines.map((l) => (l.key === incoming.key ? { ...l, quantity: l.quantity + incoming.quantity } : l))
+  return lines.map((l) => (l.key === incoming.key
+    ? { ...l, quantity: Math.min(MAX_LINE_QUANTITY, l.quantity + incoming.quantity) }
+    : l))
 }
 
 export function cartCount(lines: CartLine[]): number {

@@ -6,7 +6,6 @@ import { PlusIcon, SearchIcon } from '../../../shared/ui/icons'
 import { useDiner } from '../DinerContext'
 import { useMenuViewModel } from '../viewmodels/useMenuViewModel'
 import { DishPhoto } from './DishPhoto'
-import { ErrorView, InvalidQrView } from './InvalidQrView'
 import { MenuHeaderActions, RoundBanner } from './RoundBanner'
 
 function meta(item: MenuItem): string {
@@ -27,7 +26,7 @@ function DishCard({ item, href }: { item: MenuItem; href: string }) {
           <span className="text-[15px] font-extrabold">{formatMoney(item.price_cents)}</span>
           {item.available && (
             <Link to={href} aria-label={`Agregar ${item.name}`}
-              className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-bosque text-white">
+              className="flex h-11 w-11 items-center justify-center rounded-[10px] bg-bosque text-white">
               <PlusIcon size={18} />
             </Link>
           )}
@@ -39,10 +38,7 @@ function DishCard({ item, href }: { item: MenuItem; href: string }) {
 
 export function MenuView() {
   const vm = useMenuViewModel()
-  const { token, refreshSession } = useDiner()
-
-  if (vm.status === 'invalid_qr') return <InvalidQrView />
-  if (vm.status === 'error') return <ErrorView onRetry={() => void refreshSession().catch(() => undefined)} />
+  const { token } = useDiner()
 
   const tabs = [{ id: null, name: 'Todo' }, ...vm.categories]
   return (
@@ -59,7 +55,7 @@ export function MenuView() {
           <SearchIcon size={18} className="text-musgo" />
           <input value={vm.query} onChange={(e) => vm.setQuery(e.target.value)} placeholder="Buscar platillos"
             aria-label="Buscar platillos" type="search"
-            className="flex-1 border-0 bg-transparent text-[15px] font-medium text-carbon outline-none" />
+            className="flex-1 border-0 bg-transparent text-base font-medium text-carbon outline-none" />
         </label>
         <nav aria-label="Categorías" className="-mx-5 flex gap-5 overflow-x-auto px-5 [scrollbar-width:none]">
           {tabs.map((c) => {
@@ -92,7 +88,7 @@ export function MenuView() {
       )}
 
       {vm.cartCount > 0 && (
-        <footer className="fixed inset-x-0 bottom-5 z-10 mx-auto max-w-[480px] px-4">
+        <footer className="fixed inset-x-0 bottom-[max(20px,env(safe-area-inset-bottom))] z-10 mx-auto max-w-[480px] px-4">
           <Link to={`/mesa/${token}/pedido`}
             className="flex w-full items-center gap-3 rounded-[14px] bg-bosque px-[18px] py-4 text-base font-bold text-white no-underline shadow-[0_8px_24px_rgba(47,74,58,0.3)]">
             <span className="rounded-lg bg-white px-2 py-[3px] text-[13px] font-extrabold text-bosque">{vm.cartCount}</span>

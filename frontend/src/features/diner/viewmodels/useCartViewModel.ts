@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { loadAttempt, saveAttempt } from '../../../data/repositories/cartStore'
 import { ApiError } from '../../../data/api/http'
 import { cartTotalCents, linePriceCents, toOrderLines, type CartLine } from '../../../domain/cart'
 import type { MenuItem } from '../../../domain/types'
@@ -49,12 +50,13 @@ function lineUnavailable(line: CartLine, item: MenuItem | undefined): boolean {
 const signature = (lines: CartLine[]) => lines.map((l) => `${l.key}#${l.quantity}`).join(';')
 
 export function useCartViewModel(): CartViewModel {
-  const { api, cart, setCart, itemsById, table, session, refreshMenu, refreshSession } = useDiner()
+  const { token, api, cart, setCart, itemsById, menuLoaded, table, session, refreshMenu, refreshSession } = useDiner()
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [priceChangedTo, setPriceChangedTo] = useState<number | null>(null)
+  // Line keys the server reported as unavailable; a fresh menu or any cart edit makes them stale.
   const [serverUnavailable, setServerUnavailable] = useState<Set<string>>(new Set())
-  const attempt = useRef<{ signature: string; key: string } | null>(null)
+  useEffect(() => setServerUnavailable(new Set()), [itemsById])
 
   useEffect(() => {
     // The spec asks for a fresh menu whenever the cart opens.
@@ -70,9 +72,9 @@ export function useCartViewModel(): CartViewModel {
       quantity: line.quantity,
       mods: describe(line, item),
       totalCents: item ? linePriceCents(line, item) : 0,
-      unavailable: lineUnavailable(line, item) || serverUnavailable.has(line.menuItemId),
+      unavailable: menuLoaded && (lineUnavailable(line, item) || serverUnavailable.has(line.key)),
     }
-  }), [cart, itemsById, serverUnavailable])
+  }), [cart, itemsById, menuLoaded, serverUnavailable])
 
   const roundCents = cartTotalCents(cart, itemsById)
   const previousRoundsCents = session?.subtotal_cents ?? 0
@@ -86,6 +88,7 @@ export function useCartViewModel(): CartViewModel {
 
   const update = (next: CartLine[]) => {
     setCart(next)
+    setServerUnavailable(new Set())
     setPriceChangedTo(null)
     setError(null)
   }
@@ -93,18 +96,20 @@ export function useCartViewModel(): CartViewModel {
   const send = async (): Promise<boolean> => {
     if (blockReason || sending) return false
     const sig = signature(cart)
-    if (!attempt.current || attempt.current.signature !== sig) {
-      attempt.current = { signature: sig, key: crypto.randomUUID() }
+    let attempt = loadAttempt(token)
+    if (!attempt || attempt.signature !== sig) {
+      attempt = { signature: sig, key: crypto.randomUUID() }
+      saveAttempt(token, attempt)
     }
     setSending(true)
     setError(null)
     try {
       await api.placeOrder({
-        idempotency_key: attempt.current.key,
+        idempotency_key: attempt.key,
         expected_total_cents: priceChangedTo ?? roundCents,
         lines: toOrderLines(cart),
       })
-      attempt.current = null
+      saveAttempt(token, null)
       setPriceChangedTo(null)
       setServerUnavailable(new Set())
       setCart([])
@@ -113,8 +118,8 @@ export function useCartViewModel(): CartViewModel {
     } catch (err) {
       const e = err instanceof ApiError ? err : new ApiError(0, 'unknown', 'Algo salió mal; intenta de nuevo')
       if (e.code === 'item_unavailable') {
-        const ids = ((e.details.lines as { menu_item_id: string }[] | undefined) ?? []).map((l) => l.menu_item_id)
-        setServerUnavailable(new Set(ids))
+        const reported = (e.details.lines as { index: number }[] | undefined) ?? []
+        setServerUnavailable(new Set(reported.map((l) => cart[l.index]?.key).filter((k): k is string => !!k)))
         setError('Algo de tu pedido se agotó mientras pedías.')
         void refreshMenu().catch(() => undefined)
       } else if (e.code === 'price_changed') {

@@ -54,14 +54,14 @@ export function CartView() {
                     <>
                       <Badge tone="danger">No disponible</Badge>
                       <button type="button" onClick={() => vm.remove(l.key)}
-                        className="rounded-lg border border-[#FECDD3] bg-white px-2.5 py-1.5 text-[13px] font-bold text-[#9F1239]">Quitar</button>
+                        className="min-h-11 rounded-lg border border-[#FECDD3] bg-white px-3 py-1.5 text-[13px] font-bold text-[#9F1239]">Quitar</button>
                     </>
                   ) : (
                     <div className="flex items-center gap-2">
                       <button type="button" aria-label={`Uno menos de ${l.name}`} onClick={() => vm.changeQty(l.key, l.quantity - 1)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border-0 bg-arena text-carbon"><MinusIcon size={14} /></button>
+                        className="flex h-11 w-11 items-center justify-center rounded-lg border-0 bg-arena text-carbon"><MinusIcon size={14} /></button>
                       <button type="button" aria-label={`Uno más de ${l.name}`} onClick={() => vm.changeQty(l.key, l.quantity + 1)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border-0 bg-arena text-carbon"><PlusIcon size={14} /></button>
+                        className="flex h-11 w-11 items-center justify-center rounded-lg border-0 bg-arena text-carbon"><PlusIcon size={14} /></button>
                     </div>
                   )}
                 </div>
@@ -84,7 +84,7 @@ export function CartView() {
         </section>
       </main>
 
-      <footer className="sticky bottom-0 flex flex-none flex-col gap-2 border-t border-linea bg-white px-4 pb-[22px] pt-3.5">
+      <footer className="sticky bottom-0 flex flex-none flex-col gap-2 border-t border-linea bg-white px-4 pb-[max(22px,env(safe-area-inset-bottom))] pt-3.5">
         <button type="button" disabled={!vm.canSend} onClick={onSend}
           className="flex justify-between rounded-[14px] border-0 bg-bosque p-4 text-base font-bold text-white disabled:bg-linea disabled:text-musgo">
           <span>{vm.sending ? 'Enviando…' : vm.priceChangedTo !== null ? 'Confirmar y enviar' : 'Enviar a cocina'}</span>

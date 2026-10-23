@@ -46,3 +46,9 @@ describe('cart', () => {
     ])
   })
 })
+
+describe('cart limits', () => {
+  it('caps merged quantities at 50', () => {
+    expect(addLine([line({ quantity: 50 })], line())[0].quantity).toBe(50)
+  })
+})

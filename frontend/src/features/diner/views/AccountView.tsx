@@ -62,7 +62,7 @@ export function AccountView() {
         )}
       </main>
 
-      <footer className="sticky bottom-0 flex flex-none flex-col gap-2.5 border-t border-linea bg-white px-4 pb-[22px] pt-3.5">
+      <footer className="sticky bottom-0 flex flex-none flex-col gap-2.5 border-t border-linea bg-white px-4 pb-[max(22px,env(safe-area-inset-bottom))] pt-3.5">
         {vm.billRequested ? (
           <p role="status" className="m-0 rounded-[14px] bg-hoja-claro p-4 text-center text-[15px] font-bold text-bosque">
             Pediste la cuenta. El mesero viene en camino.

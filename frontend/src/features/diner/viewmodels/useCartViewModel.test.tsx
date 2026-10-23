@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
 import { ApiError } from '../../../data/api/http'
 import type { DinerApi } from '../../../data/api/dinerApi'
-import { fakeApi } from '../../../test/fakeApi'
+import { fakeApi, MENU } from '../../../test/fakeApi'
 import { DinerWrapper } from '../../../test/renderDiner'
 import { useDiner } from '../DinerContext'
 import { useCartViewModel } from './useCartViewModel'
@@ -102,5 +102,58 @@ describe('useCartViewModel', () => {
     await act(async () => { await result.current.vm.send() })
     expect(lastBody(api).expected_total_cents).toBe(42000)
     expect(result.current.vm.priceChangedTo).toBeNull()
+  })
+})
+
+describe('useCartViewModel review fixes', () => {
+  it('marks only the line the server names and clears when the cart changes', async () => {
+    sessionStorage.setItem('foody.cart.tok', JSON.stringify([
+      { key: 'a', menuItemId: 'tacos', quantity: 1, removedIngredientIds: [], extras: [{ extraId: 'queso', quantity: 1 }], note: '' },
+      { key: 'b', menuItemId: 'tacos', quantity: 1, removedIngredientIds: [], extras: [], note: '' },
+    ]))
+    const api = fakeApi()
+    api.placeOrder.mockRejectedValueOnce(new ApiError(409, 'item_unavailable', 'Agotado',
+      { lines: [{ index: 0, menu_item_id: 'tacos', reason: 'extra_unavailable:Queso extra' }] }))
+    const wrapper = ({ children }: { children: ReactNode }) => <DinerWrapper api={api}>{children}</DinerWrapper>
+    const { result } = renderHook(() => useCartViewModel(), { wrapper })
+    await waitFor(() => expect(result.current.roundCents).toBe(11000 + 9500))
+    await waitFor(() => expect(result.current.canSend).toBe(true))
+    await act(async () => { await result.current.send() })
+    expect(result.current.lines.map((l) => l.unavailable)).toEqual([true, false])
+    act(() => result.current.remove(result.current.lines[0].key))
+    expect(result.current.canSend).toBe(true)
+  })
+
+  it('keeps the idempotency key across a reload of the cart screen', async () => {
+    const api = fakeApi()
+    api.placeOrder.mockRejectedValueOnce(new ApiError(0, 'network', 'sin red'))
+    const first = await setup(api)
+    await act(async () => { await first.result.current.vm.send() })
+    first.unmount()
+    const wrapper = ({ children }: { children: ReactNode }) => <DinerWrapper api={api}>{children}</DinerWrapper>
+    const { result } = renderHook(() => useCartViewModel(), { wrapper })
+    await waitFor(() => expect(result.current.canSend).toBe(true))
+    await act(async () => { await result.current.send() })
+    expect(lastBody(api, 0).idempotency_key).toBe(lastBody(api, 1).idempotency_key)
+  })
+
+  it('does not mark restored lines unavailable before the menu loads', async () => {
+    seedCart()
+    let release: (m: typeof MENU) => void = () => undefined
+    const api = fakeApi({ getMenu: () => new Promise((r) => { release = r }) })
+    const wrapper = ({ children }: { children: ReactNode }) => <DinerWrapper api={api}>{children}</DinerWrapper>
+    const { result } = renderHook(() => useCartViewModel(), { wrapper })
+    expect(result.current.lines.map((l) => l.unavailable)).toEqual([false, false])
+    await act(async () => release(MENU))
+  })
+
+  it('drops restored lines for dishes no longer on the menu', async () => {
+    sessionStorage.setItem('foody.cart.tok', JSON.stringify([
+      { key: 'a', menuItemId: 'tacos', quantity: 1, removedIngredientIds: [], extras: [], note: '' },
+      { key: 'g', menuItemId: 'gone', quantity: 1, removedIngredientIds: [], extras: [], note: '' },
+    ]))
+    const wrapper = ({ children }: { children: ReactNode }) => <DinerWrapper api={fakeApi()}>{children}</DinerWrapper>
+    const { result } = renderHook(() => useCartViewModel(), { wrapper })
+    await waitFor(() => expect(result.current.lines.map((l) => l.menuItemId)).toEqual(['tacos']))
   })
 })

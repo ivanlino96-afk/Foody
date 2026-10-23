@@ -1,5 +1,6 @@
 import { Route, Routes, useParams } from 'react-router'
 import { DinerProvider } from '../features/diner/DinerContext'
+import { DinerStatusGate } from '../features/diner/DinerStatusGate'
 import { SplashGate } from '../features/diner/SplashGate'
 import { AccountView } from '../features/diner/views/AccountView'
 import { CartView } from '../features/diner/views/CartView'
@@ -11,12 +12,14 @@ function DinerRoot() {
   return (
     <DinerProvider key={token} token={token}>
       <SplashGate>
-        <Routes>
-          <Route index element={<MenuView />} />
-          <Route path="platillo/:itemId" element={<DishDetailView />} />
-          <Route path="pedido" element={<CartView />} />
-          <Route path="cuenta" element={<AccountView />} />
-        </Routes>
+        <DinerStatusGate>
+          <Routes>
+            <Route index element={<MenuView />} />
+            <Route path="platillo/:itemId" element={<DishDetailView />} />
+            <Route path="pedido" element={<CartView />} />
+            <Route path="cuenta" element={<AccountView />} />
+          </Routes>
+        </DinerStatusGate>
       </SplashGate>
     </DinerProvider>
   )

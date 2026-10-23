@@ -128,3 +128,18 @@ class ServiceCallView:
     table_code: str
     type: ServiceCallType
     created_at: datetime
+
+
+@dataclass(frozen=True)
+class AvailabilityRow:
+    id: UUID
+    name: str
+    is_available: bool
+    used_in: int = 0
+
+
+@dataclass(frozen=True)
+class AvailabilityBoardView:
+    items: list[AvailabilityRow]
+    ingredients: list[AvailabilityRow]
+    extras: list[AvailabilityRow]

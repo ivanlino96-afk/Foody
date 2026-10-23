@@ -84,6 +84,8 @@ class _State:
     auto_release_minutes: int = 5
     service_calls: dict[UUID, ServiceCall] = field(default_factory=dict)
     payments: dict[UUID, Payment] = field(default_factory=dict)
+    availability: dict[tuple, bool] = field(default_factory=dict)
+    availability_log: list[tuple] = field(default_factory=list)
 
 
 class _Tables:
@@ -228,6 +230,23 @@ class _Payments:
                       key=lambda p: p.created_at)
 
 
+class _Availability:
+    def __init__(self, uow: "InMemoryUnitOfWork") -> None:
+        self._uow = uow
+
+    def set_available(self, entity, entity_id, is_available, staff_id):
+        if (entity, entity_id) not in self._uow.state.availability:
+            return False
+        self._uow.state.availability[(entity, entity_id)] = is_available
+        return True
+
+    def add_log(self, entity, entity_id, is_available, staff_id, at):
+        self._uow.state.availability_log.append((entity, entity_id, is_available, staff_id, at))
+
+    def list_board(self):
+        raise NotImplementedError("board is SQL-only")
+
+
 class InMemoryUnitOfWork:
     def __init__(self) -> None:
         self.state = _State()
@@ -242,6 +261,7 @@ class InMemoryUnitOfWork:
         self.settings = _Settings(self)
         self.service_calls = _ServiceCalls(self)
         self.payments = _Payments(self)
+        self.availability = _Availability(self)
 
     def __enter__(self):
         self._snapshot = copy.deepcopy(self.state)

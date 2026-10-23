@@ -3,9 +3,9 @@ from datetime import date, datetime
 from typing import Protocol, Self
 from uuid import UUID
 
-from app.application.dto import MenuCategoryView, StaffMember
+from app.application.dto import AvailabilityBoardView, MenuCategoryView, StaffMember
 from app.domain.entities import DiningTable, MenuItem, Order, Payment, ServiceCall, StatusChange, TableSession
-from app.domain.enums import OrderStatus, ServiceCallType, TableStatus
+from app.domain.enums import AvailabilityEntity, OrderStatus, ServiceCallType, TableStatus
 
 
 class Clock(Protocol):
@@ -96,6 +96,16 @@ class PaymentRepository(Protocol):
     def list_by_session(self, session_id: UUID) -> list[Payment]: ...
 
 
+class AvailabilityRepository(Protocol):
+    def set_available(self, entity: AvailabilityEntity, entity_id: UUID, is_available: bool,
+                      staff_id: UUID) -> bool: ...
+
+    def add_log(self, entity: AvailabilityEntity, entity_id: UUID, is_available: bool, staff_id: UUID,
+                at: datetime) -> None: ...
+
+    def list_board(self) -> AvailabilityBoardView: ...
+
+
 class UnitOfWork(Protocol):
     tables: TableRepository
     sessions: SessionRepository
@@ -106,6 +116,7 @@ class UnitOfWork(Protocol):
     settings: SettingsRepository
     service_calls: ServiceCallRepository
     payments: PaymentRepository
+    availability: AvailabilityRepository
 
     def __enter__(self) -> Self: ...
 

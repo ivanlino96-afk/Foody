@@ -53,13 +53,13 @@ export function MenuAdminView() {
             return (
               <div key={d.id} className="flex items-center gap-3 border-t border-avena py-2">
                 {src ? <img src={src} alt="" className="size-12 rounded-lg object-cover" />
-                  : <span className="size-12 rounded-lg bg-avena" aria-hidden="true" />}
+                  : <span className="size-12 rounded-lg bg-arena" aria-hidden="true" />}
                 <div className="flex min-w-0 flex-1 flex-col">
                   <span className={`font-bold ${d.is_active ? '' : 'text-musgo line-through'}`}>{d.name}</span>
                   <span className="text-xs text-musgo">{formatMoney(d.price_cents)} · costo {formatMoney(d.cost_cents)}{d.is_available ? '' : ' · No disponible'}</span>
                 </div>
                 <Toggle label={`${d.name} disponible`} checked={d.is_available} onChange={(v) => void dishes.update(d.id, { is_available: v })} />
-                <button type="button" onClick={() => setEditing(d)} className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-avena">Editar</button>
+                <button type="button" onClick={() => setEditing(d)} className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-arena">Editar</button>
                 <button type="button" onClick={() => dishes.askDelete(d)} className="min-h-11 rounded-lg px-2 text-sm font-semibold text-[#B42318]">Borrar</button>
               </div>
             )

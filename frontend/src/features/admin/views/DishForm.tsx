@@ -15,7 +15,7 @@ export function DishForm({ dish, options, onClose, onSaved }:
         className="flex h-full w-full max-w-xl flex-col gap-4 overflow-y-auto bg-white p-6">
         <div className="flex items-center">
           <h2 className="m-0 text-xl font-extrabold">{vm.isNew ? 'Nuevo platillo' : 'Editar platillo'}</h2>
-          <button type="button" onClick={onClose} className="ml-auto min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-avena">Cerrar</button>
+          <button type="button" onClick={onClose} className="ml-auto min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-arena">Cerrar</button>
         </div>
         <Field label="Nombre" value={f.name} maxLength={80} error={vm.errors.name} onChange={(e) => vm.set('name', e.target.value)} />
         <Field label="Descripción" error={vm.errors.description}>

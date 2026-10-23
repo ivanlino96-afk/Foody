@@ -61,3 +61,8 @@ class InvalidToken(DomainError):
 class Forbidden(DomainError):
     code = "forbidden"
     default_message = "No tienes permiso para esta acción"
+
+
+class DuplicateTableCode(DomainError):
+    code = "conflict"
+    default_message = "Hay dos mesas con el mismo número"

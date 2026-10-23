@@ -35,7 +35,8 @@ from app.infrastructure.db import tables as t
 
 def _row_to_table(row: Row) -> DiningTable:
     return DiningTable(row.id, row.code, row.label, row.zone, row.capacity, row.qr_token, TableStatus(row.status),
-                       row.current_session_id, row.status_changed_at)
+                       row.current_session_id, row.status_changed_at, row.kind, row.area_id, row.pos_x, row.pos_y,
+                       row.rotation)
 
 
 def _row_to_session(row: Row) -> TableSession:
@@ -57,7 +58,8 @@ def _row_to_order(row: Row, lines: list[PricedLine]) -> Order:
 class SqlTableRepository:
     _cols = (t.dining_tables.c.id, t.dining_tables.c.code, t.dining_tables.c.label, t.dining_tables.c.zone,
              t.dining_tables.c.capacity, t.dining_tables.c.qr_token, t.dining_tables.c.status,
-             t.dining_tables.c.current_session_id, t.dining_tables.c.status_changed_at)
+             t.dining_tables.c.current_session_id, t.dining_tables.c.status_changed_at, t.dining_tables.c.kind,
+             t.dining_tables.c.area_id, t.dining_tables.c.pos_x, t.dining_tables.c.pos_y, t.dining_tables.c.rotation)
 
     def __init__(self, conn: Connection) -> None:
         self._conn = conn

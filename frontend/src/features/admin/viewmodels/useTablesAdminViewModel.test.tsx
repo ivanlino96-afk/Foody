@@ -8,8 +8,10 @@ import { useTablesAdminViewModel } from './useTablesAdminViewModel'
 afterEach(() => vi.unstubAllGlobals())
 
 const TABLES: AdminTable[] = [
-  { id: 't1', code: 'M1', label: null, zone: 'Salón', capacity: 4, qr_token: 'tok1', status: 'occupied', sort_order: 1 },
-  { id: 't2', code: 'M2', label: null, zone: 'Salón', capacity: 2, qr_token: 'tok2', status: 'free', sort_order: 2 },
+  { id: 't1', code: 'M1', label: null, zone: 'Salón', capacity: 4, qr_token: 'tok1', status: 'occupied', sort_order: 1,
+    kind: 'table', area_id: null, pos_x: null, pos_y: null, rotation: 0 },
+  { id: 't2', code: 'M2', label: null, zone: 'Salón', capacity: 2, qr_token: 'tok2', status: 'free', sort_order: 2,
+    kind: 'table', area_id: null, pos_x: null, pos_y: null, rotation: 0 },
 ]
 
 function setup(extra: Parameters<typeof stubFetch>[0] = {}) {

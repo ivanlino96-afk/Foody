@@ -22,17 +22,17 @@ export function AccountView() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col bg-avena">
-      <header className="flex items-center gap-3 bg-white px-5 py-4 shadow-[0_1px_0_#E3DED3]">
-        <Link to={`/mesa/${token}`} aria-label="Volver al menú" className="flex h-11 w-11 items-center justify-center rounded-xl bg-arena text-carbon"><BackIcon /></Link>
+      <header className="flex items-center gap-3 bg-bosque px-5 py-4 text-white">
+        <Link to={`/mesa/${token}`} aria-label="Volver al menú" className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-white"><BackIcon /></Link>
         <div className="flex flex-col">
           <h1 className="m-0 text-xl font-extrabold tracking-[-0.02em]">Tu cuenta</h1>
-          <span className="text-[13px] text-musgo">{vm.tableCode && `Mesa ${vm.tableCode}`}</span>
+          <span className="text-[13px] text-niebla">{vm.tableCode && `Mesa ${vm.tableCode}`}</span>
         </div>
       </header>
 
       <main className="flex flex-1 flex-col gap-3 px-4 pb-4 pt-4">
         {vm.error && <div role="alert" className="rounded-xl bg-[#FFF1F2] px-3.5 py-3 text-sm font-semibold text-[#9F1239]">{vm.error}</div>}
-        <section className="rounded-2xl bg-white px-4 py-1.5 shadow-[0_1px_3px_rgba(27,30,27,0.06)]">
+        <section className="rounded-2xl bg-white px-4 py-1.5 border border-linea">
           {vm.rounds.length === 0 && (
             <p className="py-6 text-center text-[15px] text-musgo">{vm.loading ? 'Cargando…' : 'Aún no hay rondas en esta mesa.'}</p>
           )}
@@ -55,7 +55,7 @@ export function AccountView() {
         </section>
 
         {(vm.paidCents > 0 || vm.billRequested) && (
-          <section className="flex flex-col gap-1.5 rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(27,30,27,0.06)]">
+          <section className="flex flex-col gap-1.5 rounded-2xl bg-white p-4 border border-linea">
             {vm.paidCents > 0 && <div className="flex justify-between text-sm text-musgo"><span>Pagado</span><span>{formatMoney(vm.paidCents)}</span></div>}
             <div className="flex justify-between text-xl font-extrabold"><span>Por pagar</span><span>{formatMoney(vm.balanceCents)}</span></div>
           </section>

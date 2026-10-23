@@ -25,13 +25,19 @@ insert into staff (id, full_name, role) values
   ('22222222-2222-2222-2222-222222222222', 'Cocina Demo', 'kitchen'),
   ('33333333-3333-3333-3333-333333333333', 'Mesero Demo', 'waiter');
 
-insert into dining_tables (code, label, zone, capacity, qr_token, sort_order) values
-  ('M1', null, 'Salón', 4, 'dev-qr-m1-000000000000000000000000', 1),
-  ('M2', null, 'Salón', 4, 'dev-qr-m2-000000000000000000000000', 2),
-  ('M3', null, 'Salón', 2, 'dev-qr-m3-000000000000000000000000', 3),
-  ('M4', null, 'Salón', 6, 'dev-qr-m4-000000000000000000000000', 4),
-  ('T1', 'Terraza 1', 'Terraza', 4, 'dev-qr-t1-000000000000000000000000', 5),
-  ('T2', 'Terraza 2', 'Terraza', 4, 'dev-qr-t2-000000000000000000000000', 6);
+insert into floor_areas (id, name, kind, x, y, width, depth, sort_order) values
+  ('dddddddd-0000-0000-0000-000000000001', 'Salón', 'salon', 0, 0, 12, 9, 1),
+  ('dddddddd-0000-0000-0000-000000000002', 'Barra', 'barra', 12, 0, 5, 9, 2),
+  ('dddddddd-0000-0000-0000-000000000003', 'Terraza', 'terraza', 0, 9, 17, 6, 3);
+
+insert into dining_tables (code, label, zone, capacity, qr_token, sort_order, kind, area_id, pos_x, pos_y, rotation) values
+  ('M1', null, 'Salón', 4, 'dev-qr-m1-000000000000000000000000', 1, 'table', 'dddddddd-0000-0000-0000-000000000001', 2.5, 2.5, 0),
+  ('M2', null, 'Salón', 4, 'dev-qr-m2-000000000000000000000000', 2, 'table', 'dddddddd-0000-0000-0000-000000000001', 6, 2.5, 0),
+  ('M3', null, 'Salón', 2, 'dev-qr-m3-000000000000000000000000', 3, 'round', 'dddddddd-0000-0000-0000-000000000001', 9.5, 2.5, 0),
+  ('M4', null, 'Salón', 6, 'dev-qr-m4-000000000000000000000000', 4, 'table', 'dddddddd-0000-0000-0000-000000000001', 4.5, 6.5, 0),
+  ('B1', 'Barra', 'Barra', 6, 'dev-qr-b1-000000000000000000000000', 5, 'bar', 'dddddddd-0000-0000-0000-000000000002', 14.5, 4.5, 90),
+  ('T1', 'Terraza 1', 'Terraza', 4, 'dev-qr-t1-000000000000000000000000', 6, 'round', 'dddddddd-0000-0000-0000-000000000003', 4, 12, 0),
+  ('T2', 'Terraza 2', 'Terraza', 4, 'dev-qr-t2-000000000000000000000000', 7, 'high', 'dddddddd-0000-0000-0000-000000000003', 9, 12, 0);
 
 insert into categories (id, name, sort_order) values
   ('aaaaaaaa-0000-0000-0000-000000000001', 'Bowls', 1),

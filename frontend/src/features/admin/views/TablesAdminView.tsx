@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router'
 import type { AdminTable } from '../../../domain/staffTypes'
 import { Button } from '../../../shared/ui/Button'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog'
@@ -43,7 +44,9 @@ export function TablesAdminView() {
 
   return (
     <>
-      <AdminTitle title="Mesas y QR" />
+      <AdminTitle title="Mesas y QR">
+        <Link to="/admin/plano" className="text-sm font-semibold text-bosque">Ubica mesas y áreas en el plano →</Link>
+      </AdminTitle>
       <Notice text={vm.notice ?? qrError} onClose={() => { vm.dismissNotice(); setQrError(null) }} />
       <form className={`${CARD} grid grid-cols-2 items-start gap-3 md:grid-cols-[140px_1fr_1fr_120px_auto]`}
         onSubmit={(e) => { e.preventDefault(); void vm.saveForm() }}>
@@ -70,10 +73,10 @@ export function TablesAdminView() {
               {qr ? <img src={qr} alt={`QR de la mesa ${t.code}`} className="size-40 self-center" />
                 : <Button variant="soft" className="!min-h-11 !py-2" onClick={() => void showQr(t)}>Ver QR</Button>}
               <div className="flex flex-wrap gap-1">
-                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-avena"
+                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-arena"
                   onClick={async () => { await showQr(t); setPrinting(t) }}>Imprimir</button>
-                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-avena" onClick={() => vm.editTable(t)}>Editar</button>
-                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-avena" onClick={() => vm.askRegenerate(t)}>Regenerar QR</button>
+                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-arena" onClick={() => vm.editTable(t)}>Editar</button>
+                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-arena" onClick={() => vm.askRegenerate(t)}>Regenerar QR</button>
                 <button type="button" className="ml-auto min-h-11 rounded-lg px-2 text-sm font-semibold text-[#B42318]" onClick={() => vm.askDelete(t)}>Borrar</button>
               </div>
             </section>

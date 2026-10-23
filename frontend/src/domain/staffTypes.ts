@@ -1,3 +1,4 @@
+import type { AreaKind, Rotation, TableKind } from './floor'
 import type { OrderStatus, ServiceCallType, TableStatus } from './types'
 
 export type StaffRole = 'admin' | 'kitchen' | 'waiter'
@@ -39,6 +40,16 @@ export interface TableMapRow {
   session_id: string | null
   balance_cents: number
   pending_calls: number
+  capacity: number | null
+  kind: TableKind
+  area_id: string | null
+  pos_x: number | null
+  pos_y: number | null
+  rotation: Rotation
+  guests_count: number | null
+  opened_at: string | null
+  consumed_cents: number
+  served_orders: number
 }
 
 export interface ServiceCallRow {
@@ -164,6 +175,11 @@ export interface AdminTable {
   qr_token: string
   status: TableStatus
   sort_order: number
+  kind: TableKind
+  area_id: string | null
+  pos_x: number | null
+  pos_y: number | null
+  rotation: Rotation
 }
 
 export interface StaffRow {
@@ -179,4 +195,20 @@ export interface RestaurantSettings {
   name: string
   auto_release_minutes: number
   tip_options: number[]
+}
+
+export interface FloorAreaRow {
+  id: string
+  name: string
+  kind: AreaKind
+  x: number
+  y: number
+  width: number
+  depth: number
+  sort_order: number
+}
+
+export interface FloorLayout {
+  areas: FloorAreaRow[]
+  tables: AdminTable[]
 }

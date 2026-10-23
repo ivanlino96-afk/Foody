@@ -20,7 +20,7 @@ export function PaymentDialog({ table, onClose, onDone, onRefused }:
           <legend className="mb-2 text-sm font-semibold">Método</legend>
           {([['cash', 'Efectivo'], ['card_terminal', 'Terminal']] as const).map(([value, label]) => (
             <button key={value} type="button" aria-pressed={vm.method === value} onClick={() => vm.setMethod(value)}
-              className={`min-h-11 flex-1 rounded-xl text-sm font-bold ${vm.method === value ? 'bg-carbon text-white' : 'bg-avena text-carbon'}`}>
+              className={`min-h-11 flex-1 rounded-xl text-sm font-bold ${vm.method === value ? 'bg-carbon text-white' : 'bg-arena text-carbon'}`}>
               {label}
             </button>
           ))}
@@ -37,7 +37,7 @@ export function PaymentDialog({ table, onClose, onDone, onRefused }:
         <div className="mb-5 flex gap-2">
           {vm.tipPresets.map((t) => (
             <button key={t.label} type="button" onClick={() => vm.applyTip(t.cents)}
-              className="min-h-11 flex-1 rounded-xl bg-avena text-sm font-semibold">{t.label} · {formatMoney(t.cents)}</button>
+              className="min-h-11 flex-1 rounded-xl bg-arena text-sm font-semibold">{t.label} · {formatMoney(t.cents)}</button>
           ))}
         </div>
         {vm.error && <p role="alert" className="mb-4 text-sm font-semibold text-[#B42318]">{vm.error}</p>}

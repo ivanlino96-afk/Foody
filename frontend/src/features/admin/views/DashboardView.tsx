@@ -18,11 +18,12 @@ export function DashboardView() {
       </AdminTitle>
       {vm.error && <p role="alert" className="m-0 text-sm font-semibold text-[#B42318]">{vm.error}</p>}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        {vm.kpis.map((k) => (
-          <div key={k.label} className={`${CARD} flex flex-col gap-1.5 !p-4`}>
-            <span className="text-[13px] font-semibold text-musgo">{k.label}</span>
+        {vm.kpis.map((k, i) => (
+          <div key={k.label} className={i === 0 ? 'flex flex-col gap-1.5 rounded-[14px] bg-bosque p-4 text-white'
+            : `${CARD} flex flex-col gap-1.5 !p-4`}>
+            <span className={`text-[13px] font-semibold ${i === 0 ? 'text-niebla' : 'text-musgo'}`}>{k.label}</span>
             <span className="text-[26px] font-extrabold tracking-tight">{k.value}</span>
-            <span className={`text-xs font-semibold ${k.alert ? 'text-[#B91C1C]' : 'text-musgo'}`}>{k.sub}</span>
+            <span className={`text-xs font-semibold ${k.alert ? 'text-[#B91C1C]' : i === 0 ? 'text-niebla' : 'text-musgo'}`}>{k.sub}</span>
           </div>
         ))}
       </div>

@@ -19,12 +19,14 @@ from app.application.use_cases.admin_catalog import (
 from app.application.use_cases.admin_staff import create_staff, list_staff, update_staff
 from app.application.use_cases.admin_tables import create_table, delete_table, regenerate_qr, table_qr_url
 from app.application.use_cases.dashboard import get_dashboard, get_settings, list_orders_history, update_settings
+from app.application.use_cases.floor_layout import get_floor, save_floor
 from app.domain.enums import OrderStatus
 from app.presentation.admin_schemas import (
     CategoryIn,
     CategoryPatch,
     ExtraIn,
     ExtraPatch,
+    FloorLayoutIn,
     IngredientIn,
     IngredientPatch,
     MenuItemIn,
@@ -105,6 +107,17 @@ def remove_table(table_id: UUID, staff: CurrentStaff = Depends(admin_only),
 @router.post("/tables/{table_id}/regenerate-qr")
 def new_qr(table_id: UUID, staff: CurrentStaff = Depends(admin_only), uow: UnitOfWork = Depends(get_uow)) -> dict:
     return {"qr_token": regenerate_qr(uow, table_id, staff.id)}
+
+
+@router.get("/floor")
+def floor(uow: UnitOfWork = Depends(get_uow)) -> dict:
+    return get_floor(uow)
+
+
+@router.put("/floor")
+def put_floor(body: FloorLayoutIn, staff: CurrentStaff = Depends(admin_only), uow: UnitOfWork = Depends(get_uow)) -> dict:
+    data = body.model_dump(mode="python")
+    return save_floor(uow, data["areas"], data["tables"], data["deleted_table_ids"], staff.id)
 
 
 @router.get("/tables/{table_id}/qr.png")

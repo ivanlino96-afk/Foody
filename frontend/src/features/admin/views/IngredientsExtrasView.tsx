@@ -78,7 +78,7 @@ export function IngredientsExtrasView() {
                   {ex.ingredient_id && ` · depende de ${ingredients.items.find((i) => i.id === ex.ingredient_id)?.name ?? 'un ingrediente'}`}</span>
               </div>
               <Toggle label={`${ex.name} disponible`} checked={ex.is_available} onChange={(v) => void extras.update(ex.id, { is_available: v })} />
-              <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-avena"
+              <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-arena"
                 onClick={() => setExtra({ id: ex.id, name: ex.name, price: centsToInput(ex.price_cents), cost: centsToInput(ex.cost_cents), ingredientId: ex.ingredient_id ?? '' })}>Editar</button>
               <button type="button" onClick={() => extras.askDelete(ex)} className="min-h-11 rounded-lg px-2 text-sm font-semibold text-[#B42318]">Borrar</button>
             </div>

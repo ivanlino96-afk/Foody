@@ -123,6 +123,16 @@ class TableMapView:
     session_id: UUID | None = None
     balance_cents: int = 0
     pending_calls: int = 0
+    capacity: int | None = None
+    kind: str = "table"
+    area_id: UUID | None = None
+    pos_x: float | None = None
+    pos_y: float | None = None
+    rotation: int = 0
+    guests_count: int | None = None
+    opened_at: datetime | None = None
+    consumed_cents: int = 0
+    served_orders: int = 0
 
 
 @dataclass(frozen=True)

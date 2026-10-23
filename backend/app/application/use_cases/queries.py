@@ -106,7 +106,11 @@ def get_tables_map(uow: UnitOfWork) -> list[TableMapView]:
             session = uow.sessions.get(table.current_session_id) if table.current_session_id else None
             calls = sum(uow.service_calls.pending_for_session(session.id, t) is not None
                         for t in ServiceCallType) if session else 0
-            views.append(TableMapView(table.id, table.code, table.label, table.zone, table.status,
-                                      table.status_changed_at, pending, ready, session.id if session else None,
-                                      balance_cents(session) if session else 0, calls))
+            served = sum(o.status == OrderStatus.SERVED for o in orders)
+            views.append(TableMapView(
+                table.id, table.code, table.label, table.zone, table.status, table.status_changed_at, pending, ready,
+                session.id if session else None, balance_cents(session) if session else 0, calls, table.capacity,
+                table.kind, table.area_id, table.pos_x, table.pos_y, table.rotation,
+                session.guests_count if session else None, session.opened_at if session else None,
+                session.subtotal_cents if session else 0, served))
         return views

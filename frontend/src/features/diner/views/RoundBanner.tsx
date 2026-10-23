@@ -26,17 +26,17 @@ export function MenuHeaderActions() {
     <div className="flex flex-col items-end gap-1">
       <div className="flex gap-2">
         <IconButton label={vm.waiterCalled ? 'Ya avisamos al mesero' : 'Llamar al mesero'} onClick={() => void vm.callWaiter()}
-          aria-pressed={vm.waiterCalled} className={vm.waiterCalled ? '!bg-hoja-claro !text-bosque' : ''}>
+          aria-pressed={vm.waiterCalled} className={vm.waiterCalled ? '!bg-white !text-bosque' : '!bg-white/15 !text-white'}>
           <BellIcon />
         </IconButton>
         <IconButton label={vm.billRequested ? 'Cuenta pedida' : 'Pedir la cuenta'} onClick={() => void vm.requestBill()}
           disabled={!vm.canRequestBill && !vm.billRequested} aria-pressed={vm.billRequested}
-          className={vm.billRequested ? '!bg-hoja-claro !text-bosque' : ''}>
+          className={vm.billRequested ? '!bg-white !text-bosque' : '!bg-white/15 !text-white'}>
           <ReceiptIcon />
         </IconButton>
       </div>
       {(vm.waiterCalled || vm.error) && (
-        <span role="status" className={`text-xs font-semibold ${vm.error ? 'text-[#9F1239]' : 'text-bosque'}`}>
+        <span role="status" className={`text-xs font-semibold ${vm.error ? 'text-[#FECDD3]' : 'text-niebla'}`}>
           {vm.error ?? 'Avisamos al mesero'}
         </span>
       )}

@@ -11,6 +11,7 @@ import { MenuAdminView } from '../features/admin/views/MenuAdminView'
 import { IngredientsExtrasView } from '../features/admin/views/IngredientsExtrasView'
 import { SettingsView } from '../features/admin/views/SettingsView'
 import { StaffView } from '../features/admin/views/StaffView'
+import { FloorEditorView } from '../features/admin/views/FloorEditorView'
 import { TablesAdminView } from '../features/admin/views/TablesAdminView'
 import { WaiterView } from '../features/waiter/views/WaiterView'
 import { DinerProvider } from '../features/diner/DinerContext'
@@ -75,6 +76,7 @@ export function AppRoutes() {
           <Route path="menu" element={<MenuAdminView />} />
           <Route path="ingredientes" element={<IngredientsExtrasView />} />
           <Route path="disponibilidad" element={<AvailabilityView />} />
+          <Route path="plano" element={<FloorEditorView />} />
           <Route path="mesas" element={<TablesAdminView />} />
           <Route path="personal" element={<StaffView />} />
           <Route path="configuracion" element={<SettingsView />} />

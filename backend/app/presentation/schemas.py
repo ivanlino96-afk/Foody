@@ -1,9 +1,10 @@
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.domain.enums import OrderStatus
+from app.domain.enums import OrderStatus, PaymentMethod, ServiceCallType, TableStatus
 from app.domain.services.pricing import ExtraRequest, LineRequest
 
 
@@ -57,3 +58,29 @@ class CancelOrderIn(BaseModel):
 class OrderStatusOut(BaseModel):
     order_id: UUID
     status: OrderStatus
+
+
+class ServiceCallIn(BaseModel):
+    type: ServiceCallType
+
+
+class ServiceCallOut(BaseModel):
+    id: UUID
+    type: ServiceCallType
+    created_at: datetime
+
+
+class PaymentIn(BaseModel):
+    method: Literal[PaymentMethod.CASH, PaymentMethod.CARD_TERMINAL]
+    amount_cents: int = Field(ge=1, le=10_000_000)
+    tip_cents: int = Field(0, ge=0, le=10_000_000)
+
+
+class PaymentOut(BaseModel):
+    payment_id: UUID
+    balance_cents: int
+    table_status: TableStatus
+
+
+class AvailabilityIn(BaseModel):
+    is_available: bool

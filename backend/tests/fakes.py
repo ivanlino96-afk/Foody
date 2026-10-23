@@ -1,4 +1,5 @@
 import copy
+import dataclasses
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
@@ -14,10 +15,12 @@ from app.domain.entities import (
     ItemIngredient,
     MenuItem,
     Order,
+    Payment,
+    ServiceCall,
     StatusChange,
     TableSession,
 )
-from app.domain.enums import OrderStatus, StaffRole, TableStatus
+from app.domain.enums import AvailabilityEntity, OrderStatus, StaffRole, TableStatus
 
 
 def make_ingredient(name: str = "Cebolla", available: bool = True) -> Ingredient:
@@ -80,6 +83,10 @@ class _State:
     staff: dict[UUID, StaffMember] = field(default_factory=dict)
     daily: dict[date, int] = field(default_factory=dict)
     auto_release_minutes: int = 5
+    service_calls: dict[UUID, ServiceCall] = field(default_factory=dict)
+    payments: dict[UUID, Payment] = field(default_factory=dict)
+    availability: dict[tuple, bool] = field(default_factory=dict)
+    availability_log: list[tuple] = field(default_factory=list)
 
 
 class _Tables:
@@ -182,6 +189,15 @@ class _Staff:
     def get(self, staff_id):
         return self._uow.state.staff.get(staff_id)
 
+    def list_all(self):
+        return [vars(m) for m in self._uow.state.staff.values()]
+
+    def add(self, member, created_by):
+        self._uow.state.staff[member.id] = member
+
+    def update(self, staff_id, values, updated_by):
+        self._uow.state.staff[staff_id] = dataclasses.replace(self._uow.state.staff[staff_id], **values)
+
 
 class _Settings:
     def __init__(self, uow: "InMemoryUnitOfWork") -> None:
@@ -189,6 +205,60 @@ class _Settings:
 
     def auto_release_minutes(self):
         return self._uow.state.auto_release_minutes
+
+
+class _ServiceCalls:
+    def __init__(self, uow: "InMemoryUnitOfWork") -> None:
+        self._uow = uow
+
+    def add(self, call):
+        self._uow.state.service_calls[call.id] = call
+
+    save = add
+
+    def get_for_update(self, call_id):
+        return self._uow.state.service_calls.get(call_id)
+
+    def pending_for_session(self, session_id, call_type):
+        return next((c for c in self._uow.state.service_calls.values()
+                     if c.session_id == session_id and c.type == call_type and c.attended_at is None), None)
+
+    def list_pending(self):
+        return sorted((c for c in self._uow.state.service_calls.values() if c.attended_at is None),
+                      key=lambda c: c.created_at)
+
+
+class _Payments:
+    def __init__(self, uow: "InMemoryUnitOfWork") -> None:
+        self._uow = uow
+
+    def add(self, payment):
+        self._uow.state.payments[payment.id] = payment
+
+    def list_by_session(self, session_id):
+        return sorted((p for p in self._uow.state.payments.values() if p.session_id == session_id),
+                      key=lambda p: p.created_at)
+
+
+class _Availability:
+    def __init__(self, uow: "InMemoryUnitOfWork") -> None:
+        self._uow = uow
+
+    def set_available(self, entity, entity_id, is_available, staff_id):
+        items = self._uow.state.items
+        if entity == AvailabilityEntity.MENU_ITEM and entity_id in items:
+            items[entity_id] = dataclasses.replace(items[entity_id], is_available=is_available)
+            return True
+        if (entity, entity_id) not in self._uow.state.availability:
+            return False
+        self._uow.state.availability[(entity, entity_id)] = is_available
+        return True
+
+    def add_log(self, entity, entity_id, is_available, staff_id, at):
+        self._uow.state.availability_log.append((entity, entity_id, is_available, staff_id, at))
+
+    def list_board(self):
+        raise NotImplementedError("board is SQL-only")
 
 
 class InMemoryUnitOfWork:
@@ -203,6 +273,9 @@ class InMemoryUnitOfWork:
         self.history = _History(self)
         self.staff = _Staff(self)
         self.settings = _Settings(self)
+        self.service_calls = _ServiceCalls(self)
+        self.payments = _Payments(self)
+        self.availability = _Availability(self)
 
     def __enter__(self):
         self._snapshot = copy.deepcopy(self.state)

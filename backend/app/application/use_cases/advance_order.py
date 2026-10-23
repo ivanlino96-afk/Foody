@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from app.application.ports import Clock, UnitOfWork
+from app.application.use_cases.payments import settle_session
 from app.application.use_cases.tables import apply_table_event
 from app.domain.entities import Order, StatusChange
 from app.domain.enums import ChangeSource, OrderStatus, StaffRole, TableEvent, TableStatus
@@ -66,8 +67,17 @@ def cancel_order(uow: UnitOfWork, clock: Clock, order_id: UUID, staff_id: UUID, 
         order.cancel_reason = reason.strip()
         uow.orders.save(order)
         session = uow.sessions.get_for_update(order.session_id)
+        if session.closed_at is not None or session.paid_at is not None:
+            raise InvalidTransition("La cuenta ya está pagada", {"session_id": str(session.id)})
+        paid_without_tip = session.paid_cents - session.tip_cents
+        if paid_without_tip > session.subtotal_cents - order.subtotal_cents:
+            raise InvalidTransition("Ya se cobró parte de esta orden; no se puede cancelar",
+                                    {"session_id": str(session.id), "paid_cents": paid_without_tip})
         session.subtotal_cents -= order.subtotal_cents
         session.cost_cents -= order.cost_cents
+        table = uow.tables.get_for_update(order.table_id)
+        if table.status == TableStatus.BILL_REQUESTED and paid_without_tip == session.subtotal_cents:
+            settle_session(uow, clock, table, session, staff_id)
         uow.sessions.save(session)
         _finish_round_if_done(uow, clock, order)
         uow.commit()

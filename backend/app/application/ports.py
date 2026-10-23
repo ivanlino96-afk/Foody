@@ -3,9 +3,9 @@ from datetime import date, datetime
 from typing import Protocol, Self
 from uuid import UUID
 
-from app.application.dto import MenuCategoryView, StaffMember
-from app.domain.entities import DiningTable, MenuItem, Order, StatusChange, TableSession
-from app.domain.enums import OrderStatus, TableStatus
+from app.application.dto import AvailabilityBoardView, MenuCategoryView, StaffMember
+from app.domain.entities import DiningTable, MenuItem, Order, Payment, ServiceCall, StatusChange, TableSession
+from app.domain.enums import AvailabilityEntity, OrderStatus, ServiceCallType, TableStatus
 
 
 class Clock(Protocol):
@@ -73,9 +73,94 @@ class HistoryRepository(Protocol):
 class StaffRepository(Protocol):
     def get(self, staff_id: UUID) -> StaffMember | None: ...
 
+    def list_all(self) -> list[dict]: ...
+
+    def add(self, member: StaffMember, created_by: UUID) -> None: ...
+
+    def update(self, staff_id: UUID, values: dict, updated_by: UUID) -> None: ...
+
 
 class SettingsRepository(Protocol):
     def auto_release_minutes(self) -> int: ...
+
+    def get(self) -> dict: ...
+
+    def update(self, values: dict, staff_id: UUID) -> None: ...
+
+
+class ReportsRepository(Protocol):
+    """Read-only queries for the admin; windows are half-open [start, end)."""
+
+    def orders_history(self, start: datetime, end: datetime, status: OrderStatus | None, table_code: str | None,
+                       limit: int) -> list[dict]: ...
+
+    def approved_payments(self, start: datetime, end: datetime) -> list[tuple[int, int, datetime]]: ...
+
+    def paid_sessions(self, start: datetime, end: datetime) -> tuple[int, int]:
+        """(sessions with paid_at in the window, cost of their non-cancelled orders)."""
+        ...
+
+    def orders_created(self, start: datetime, end: datetime) -> list[Order]: ...
+
+    def table_counts(self) -> tuple[int, int]:
+        """(tables not free, active tables)."""
+        ...
+
+
+class AuthAdmin(Protocol):
+    def create_user(self, email: str, password: str) -> UUID: ...
+
+
+class ServiceCallRepository(Protocol):
+    def add(self, call: ServiceCall) -> None: ...
+
+    def get_for_update(self, call_id: UUID) -> ServiceCall | None: ...
+
+    def save(self, call: ServiceCall) -> None: ...
+
+    def pending_for_session(self, session_id: UUID, call_type: ServiceCallType) -> ServiceCall | None: ...
+
+    def list_pending(self) -> list[ServiceCall]: ...
+
+
+class PaymentRepository(Protocol):
+    def add(self, payment: Payment) -> None: ...
+
+    def list_by_session(self, session_id: UUID) -> list[Payment]: ...
+
+
+class AvailabilityRepository(Protocol):
+    def set_available(self, entity: AvailabilityEntity, entity_id: UUID, is_available: bool,
+                      staff_id: UUID) -> bool: ...
+
+    def add_log(self, entity: AvailabilityEntity, entity_id: UUID, is_available: bool, staff_id: UUID,
+                at: datetime) -> None: ...
+
+    def list_board(self) -> AvailabilityBoardView: ...
+
+
+CatalogKind = str  # "categories" | "ingredients" | "extras" | "menu_items" | "dining_tables"
+
+
+class CatalogRepository(Protocol):
+    """Admin CRUD over catalog tables; rows travel as plain dicts (no business rules live here)."""
+
+    def list_all(self, kind: CatalogKind) -> list[dict]: ...
+
+    def get(self, kind: CatalogKind, entity_id: UUID) -> dict | None: ...
+
+    def create(self, kind: CatalogKind, values: dict, staff_id: UUID) -> UUID: ...
+
+    def update(self, kind: CatalogKind, entity_id: UUID, values: dict, staff_id: UUID) -> bool: ...
+
+    def soft_delete(self, kind: CatalogKind, entity_id: UUID, staff_id: UUID) -> bool: ...
+
+    def set_item_links(self, item_id: UUID, ingredients: list[dict] | None, extras: list[dict] | None,
+                       staff_id: UUID) -> None: ...
+
+
+class PhotoStorage(Protocol):
+    def upload(self, path: str, content: bytes, content_type: str) -> None: ...
 
 
 class UnitOfWork(Protocol):
@@ -86,6 +171,11 @@ class UnitOfWork(Protocol):
     history: HistoryRepository
     staff: StaffRepository
     settings: SettingsRepository
+    service_calls: ServiceCallRepository
+    payments: PaymentRepository
+    availability: AvailabilityRepository
+    catalog: CatalogRepository
+    reports: ReportsRepository
 
     def __enter__(self) -> Self: ...
 

@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from app.domain.enums import ChangeSource, OrderStatus, TableStatus
+from app.domain.enums import ChangeSource, OrderStatus, PaymentMethod, PaymentStatus, ServiceCallType, TableStatus
 
 if TYPE_CHECKING:
     from app.domain.services.pricing import PricedLine
@@ -83,6 +83,8 @@ class TableSession:
     tip_cents: int = 0
     paid_cents: int = 0
     closed_at: datetime | None = None
+    bill_requested_at: datetime | None = None
+    paid_at: datetime | None = None
 
 
 @dataclass
@@ -115,3 +117,27 @@ class StatusChange:
     source: ChangeSource
     changed_by: UUID | None
     changed_at: datetime = field()
+
+
+@dataclass
+class Payment:
+    id: UUID
+    session_id: UUID
+    method: PaymentMethod
+    status: PaymentStatus
+    amount_cents: int
+    tip_cents: int
+    received_by: UUID | None
+    paid_at: datetime | None
+    created_at: datetime
+
+
+@dataclass
+class ServiceCall:
+    id: UUID
+    session_id: UUID
+    table_id: UUID
+    type: ServiceCallType
+    created_at: datetime
+    attended_at: datetime | None = None
+    attended_by: UUID | None = None

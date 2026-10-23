@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     database_url: str
     supabase_url: str
     supabase_jwt_secret: str | None = None
+    supabase_service_role_key: str | None = None
+    public_app_url: str = "http://localhost:5173"
     timezone: str = "America/Mexico_City"
     cors_origins: list[str] = ["http://localhost:5173"]
     enable_scheduler: bool = True

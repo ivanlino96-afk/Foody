@@ -39,3 +39,28 @@ class TableEvent(StrEnum):
     PAID = "paid"
     RELEASE = "release"
     REOPEN = "reopen"
+
+
+class PaymentMethod(StrEnum):
+    CASH = "cash"
+    CARD_TERMINAL = "card_terminal"
+    MERCADO_PAGO = "mercado_pago"
+
+
+class PaymentStatus(StrEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"
+    REFUNDED = "refunded"
+
+
+class ServiceCallType(StrEnum):
+    CALL_WAITER = "call_waiter"
+    REQUEST_BILL = "request_bill"
+
+
+class AvailabilityEntity(StrEnum):
+    MENU_ITEM = "menu_item"
+    INGREDIENT = "ingredient"
+    EXTRA = "extra"

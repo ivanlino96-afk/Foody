@@ -12,9 +12,10 @@ from app.application.dto import (
 )
 from app.application.ports import UnitOfWork
 from app.domain.entities import MenuItem, Order
-from app.domain.enums import OrderStatus
+from app.domain.enums import OrderStatus, ServiceCallType, TableStatus
 from app.domain.errors import NotFound
 from app.domain.services.availability import extra_available, item_availability
+from app.domain.services.billing import balance_cents
 from app.domain.services.pricing import PricedLine
 from app.domain.services.table_state_machine import can_order
 
@@ -81,8 +82,9 @@ def get_diner_session(uow: UnitOfWork, qr_token: str) -> DinerSessionView | None
         if session is None or session.closed_at is not None:
             return None
         rounds = [_round_view(o) for o in uow.orders.list_by_session(session.id)]
-        balance = session.subtotal_cents + session.tip_cents - session.paid_cents
-        return DinerSessionView(rounds, session.subtotal_cents, session.tip_cents, session.paid_cents, balance)
+        pending = [t.value for t in ServiceCallType if uow.service_calls.pending_for_session(session.id, t)]
+        return DinerSessionView(rounds, session.subtotal_cents, session.tip_cents, session.paid_cents,
+                                balance_cents(session), table.status == TableStatus.BILL_REQUESTED, pending)
 
 
 def get_active_orders(uow: UnitOfWork) -> list[KitchenOrderView]:
@@ -101,6 +103,10 @@ def get_tables_map(uow: UnitOfWork) -> list[TableMapView]:
             orders = uow.orders.list_by_session(table.current_session_id) if table.current_session_id else []
             pending = sum(o.status in (OrderStatus.RECEIVED, OrderStatus.PREPARING) for o in orders)
             ready = sum(o.status == OrderStatus.READY for o in orders)
+            session = uow.sessions.get(table.current_session_id) if table.current_session_id else None
+            calls = sum(uow.service_calls.pending_for_session(session.id, t) is not None
+                        for t in ServiceCallType) if session else 0
             views.append(TableMapView(table.id, table.code, table.label, table.zone, table.status,
-                                      table.status_changed_at, pending, ready))
+                                      table.status_changed_at, pending, ready, session.id if session else None,
+                                      balance_cents(session) if session else 0, calls))
         return views

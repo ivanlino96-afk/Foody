@@ -82,6 +82,56 @@ describe('AuthProvider', () => {
   })
 })
 
+describe('AuthProvider session upkeep', () => {
+  it('asks supabase for a fresh token before each api call', async () => {
+    const fetchMock = stubFetch({ 'GET /me': meAs('kitchen'), 'GET /kitchen/orders': { status: 200, body: [] } })
+    const client = fakeAuthClient('stored')
+    renderAuth(client, '/cocina', true)
+    expect(await screen.findByText('name:Cocina Demo')).toBeInTheDocument()
+
+    client.rotate('refreshed')
+    await act(async () => screen.getByText('load').click())
+
+    const call = fetchMock.mock.calls.find(([u]) => String(u).endsWith('/kitchen/orders'))
+    expect((call?.[1]?.headers as Record<string, string>).Authorization).toBe('Bearer refreshed')
+    expect(screen.getByText('status:signed_in')).toBeInTheDocument()
+  })
+
+  it('an expired session signs out only this device', async () => {
+    stubFetch({ 'GET /me': meAs('kitchen'), 'GET /kitchen/orders': { status: 401, body: { code: 'unauthorized', message: 'x' } } })
+    const client = fakeAuthClient('stored')
+    renderAuth(client, '/cocina', true)
+    expect(await screen.findByText('name:Cocina Demo')).toBeInTheDocument()
+    await act(async () => screen.getByText('load').click())
+    await screen.findByText(/^path:\/login/)
+    expect(client.signOut).toHaveBeenCalledWith({ scope: 'local' })
+  })
+
+  it('a sign-out from elsewhere explains why', async () => {
+    stubFetch({ 'GET /me': meAs('waiter') })
+    const client = fakeAuthClient('stored')
+    renderAuth(client, '/mesero', true)
+    expect(await screen.findByText('name:Mesero Demo')).toBeInTheDocument()
+    await act(async () => client.emit('SIGNED_OUT'))
+    expect(await screen.findByText('notice:Tu sesión terminó; vuelve a entrar')).toBeInTheDocument()
+    expect(screen.getByText(/^path:\/login/)).toBeInTheDocument()
+  })
+
+  it('signing out on purpose leaves no notice and keeps other devices', async () => {
+    stubFetch({ 'GET /me': meAs('waiter') })
+    const client = fakeAuthClient('stored')
+    function Out() {
+      const { signOut, notice, status } = useAuth()
+      return <><button onClick={() => void signOut()}>salir</button><p>n:{notice ?? '-'}</p><p>s:{status}</p></>
+    }
+    render(<MemoryRouter><AuthProvider client={client}><Out /></AuthProvider></MemoryRouter>)
+    await screen.findByText('s:signed_in')
+    await act(async () => screen.getByText('salir').click())
+    expect(screen.getByText('n:-')).toBeInTheDocument()
+    expect(client.signOut).toHaveBeenCalledWith({ scope: 'local' })
+  })
+})
+
 describe('RequireRole', () => {
   it('redirects each role to its home', async () => {
     expect([homeFor('kitchen'), homeFor('waiter'), homeFor('admin')]).toEqual(['/cocina', '/mesero', '/admin'])

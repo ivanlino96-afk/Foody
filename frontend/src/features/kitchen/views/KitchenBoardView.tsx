@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import { soundReady, unlockAudio } from '../../../shared/sound'
 import { ConnectionDot } from '../../../shared/ui/ConnectionDot'
 import { Notice } from '../../../shared/ui/Notice'
 import { StaffHeader } from '../../../shared/ui/StaffHeader'
@@ -55,6 +57,14 @@ function TicketCard({ t, busy, onAction }: { t: Ticket; busy: boolean; onAction:
 export function KitchenBoardView() {
   const vm = useKitchenBoardViewModel()
   const clock = useClock()
+  const [soundOn, setSoundOn] = useState(soundReady)
+  useEffect(() => {
+    if (soundOn) return
+    // Browsers only allow audio after a gesture: the first tap anywhere on the board enables the chime.
+    const unlock = () => void unlockAudio().then(() => setSoundOn(soundReady()))
+    window.addEventListener('pointerdown', unlock)
+    return () => window.removeEventListener('pointerdown', unlock)
+  }, [soundOn])
   return (
     <div className="flex min-h-dvh flex-col bg-avena text-carbon">
       <StaffHeader area="kitchen">
@@ -70,7 +80,13 @@ export function KitchenBoardView() {
           </Link>
         </span>
       </StaffHeader>
-      <Notice text={vm.notice} onClose={vm.dismissNotice} />
+      <Notice text={vm.notice ?? vm.loadError} onClose={vm.notice ? vm.dismissNotice : undefined} />
+      {!soundOn && (
+        // Floating, so removing it on the first tap never shifts the tickets under the finger.
+        <p role="status" className="pointer-events-none fixed bottom-4 left-1/2 z-10 m-0 -translate-x-1/2 rounded-full bg-carbon px-4 py-2.5 text-sm font-semibold text-white shadow-lg">
+          Toca la pantalla para activar el sonido de órdenes nuevas.
+        </p>
+      )}
       <div className="grid flex-1 grid-cols-1 gap-4 px-6 py-5 md:grid-cols-3">
         {vm.columns.map((col) => (
           <section key={col.status} aria-label={col.title} className="flex min-h-0 flex-col gap-3">

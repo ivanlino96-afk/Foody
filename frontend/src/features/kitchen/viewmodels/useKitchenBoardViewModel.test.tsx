@@ -99,4 +99,10 @@ describe('useKitchenBoardViewModel', () => {
 
     expect(ordersCalls()).toBeGreaterThan(before)
   })
+
+  it('says when the board could not be refreshed', async () => {
+    stubFetch({ 'GET /me': meAs('kitchen'), 'GET /kitchen/orders': { status: 500, body: { code: 'error', message: 'boom' } } })
+    const { result } = renderHook(() => useKitchenBoardViewModel(), { wrapper: staffWrapper() })
+    await waitFor(() => expect(result.current.loadError).toBe('No se pudo actualizar; reintentando…'))
+  })
 })

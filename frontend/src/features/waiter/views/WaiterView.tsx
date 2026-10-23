@@ -31,7 +31,8 @@ export function WaiterView() {
           <span className="text-sm text-musgo">{map.occupiedLine}</span>
         </span>
       </StaffHeader>
-      <Notice text={map.notice ?? calls.notice} onClose={() => { map.dismissNotice(); calls.dismissNotice() }} />
+      <Notice text={map.notice ?? calls.notice ?? feed.error}
+        onClose={map.notice || calls.notice ? () => { map.dismissNotice(); calls.dismissNotice() } : undefined} />
       <div className="flex flex-1 flex-col gap-5 px-6 py-5 lg:flex-row">
         <main className="flex flex-1 flex-col gap-3.5">
           <div className="flex flex-wrap gap-3.5">
@@ -59,7 +60,7 @@ export function WaiterView() {
         </main>
         <aside className="flex w-full flex-none flex-col gap-3 lg:w-[340px]" aria-label="Avisos">
           <h2 className="m-0 text-lg font-extrabold">Avisos · {calls.alerts.length}</h2>
-          {calls.alerts.length === 0 && <p className="m-0 text-sm text-musgo">Todo en orden.</p>}
+          {calls.alerts.length === 0 && !feed.loading && !feed.error && <p className="m-0 text-sm text-musgo">Todo en orden.</p>}
           {calls.alerts.map((a) => (
             <div key={a.key} className="flex flex-col gap-2.5 rounded-[14px] bg-white p-3.5 shadow-[0_1px_3px_rgba(27,30,27,0.08)]">
               <div className="flex items-center gap-2">
@@ -68,8 +69,10 @@ export function WaiterView() {
                 <span className="ml-auto text-xs text-musgo">{a.ago}</span>
               </div>
               <span className="text-sm text-[#44483F]">{a.body}</span>
-              <button type="button" onClick={() => void a.run()}
-                className={`min-h-11 rounded-[10px] text-sm font-bold ${ALERT_BTN[a.kind]}`}>{a.action}</button>
+              <button type="button" onClick={() => void a.run()} disabled={calls.busyKey === a.key}
+                className={`min-h-11 rounded-[10px] text-sm font-bold disabled:opacity-60 ${ALERT_BTN[a.kind]}`}>
+                {calls.busyKey === a.key ? 'Guardando…' : a.action}
+              </button>
             </div>
           ))}
         </aside>
@@ -82,6 +85,7 @@ export function WaiterView() {
       )}
       {charging && (
         <PaymentDialog key={charging.id} table={charging} onClose={() => setChargingId(null)}
+          onRefused={() => void feed.refresh().catch(() => undefined)}
           onDone={() => { setChargingId(null); void feed.refresh().catch(() => undefined) }} />
       )}
     </div>

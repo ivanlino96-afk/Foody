@@ -41,14 +41,37 @@ export function AuthProvider({ client: injected, children }: { client?: AuthClie
     setStatus('signed_out')
   }, [])
 
+  // True while this tab is the one signing out, so the SIGNED_OUT event is not reported as "session ended".
+  const signingOut = useRef(false)
+  const signOutHere = useCallback(async () => {
+    signingOut.current = true
+    try {
+      await client.signOut({ scope: 'local' }) // never revoke other tablets sharing the account
+    } finally {
+      signingOut.current = false
+    }
+  }, [client])
+
   const onAuthError = useCallback((err: ApiError) => {
     if (tokenRef.current === null) return
     setNotice(err.status === 401 ? SESSION_ENDED : NO_ACCESS)
     clear()
-    void client.signOut()
-  }, [client, clear])
+    void signOutHere()
+  }, [clear, signOutHere])
 
-  const api = useMemo(() => staffApi(() => tokenRef.current, onAuthError), [onAuthError])
+  /** Supabase pauses auto-refresh in hidden tabs; getSession() refreshes an expired token before we use it. */
+  const getToken = useCallback(async () => {
+    if (tokenRef.current === null) return null
+    const { data } = await client.getSession()
+    const fresh = data.session?.access_token
+    if (fresh && tokenRef.current !== null && fresh !== tokenRef.current) {
+      tokenRef.current = fresh
+      setToken(fresh)
+    }
+    return fresh ?? tokenRef.current
+  }, [client])
+
+  const api = useMemo(() => staffApi(getToken, onAuthError), [getToken, onAuthError])
 
   const loadProfile = useCallback(async (accessToken: string) => {
     tokenRef.current = accessToken
@@ -73,7 +96,10 @@ export function AuthProvider({ client: injected, children }: { client?: AuthClie
       else setStatus('signed_out')
     })
     const { data } = client.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') clear()
+      if (event === 'SIGNED_OUT') {
+        if (!signingOut.current && tokenRef.current !== null) setNotice(SESSION_ENDED)
+        clear()
+      }
       else if (session && tokenRef.current && event === 'TOKEN_REFRESHED') {
         tokenRef.current = session.access_token
         setToken(session.access_token)
@@ -96,8 +122,8 @@ export function AuthProvider({ client: injected, children }: { client?: AuthClie
   const signOut = useCallback(async () => {
     setNotice(null)
     clear()
-    await client.signOut()
-  }, [client, clear])
+    await signOutHere()
+  }, [clear, signOutHere])
 
   const value = useMemo<AuthState>(() => ({ status, staff, token, notice, api, signIn, signOut }),
     [status, staff, token, notice, api, signIn, signOut])

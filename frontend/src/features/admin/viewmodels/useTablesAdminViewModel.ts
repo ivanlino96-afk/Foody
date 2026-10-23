@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../../data/api/http'
 import type { AdminTable } from '../../../domain/staffTypes'
 import { useAuth } from '../../auth/AuthContext'
@@ -45,8 +45,9 @@ export function useTablesAdminViewModel() {
     void reload()
   }, [reload])
 
-  // Object URLs are revoked when the screen unmounts.
-  useEffect(() => () => Object.values(qrUrls).forEach((u) => URL.revokeObjectURL(u)), [qrUrls])
+  // Every object URL stays valid while the screen is open (the print sheet reuses them); all are revoked on unmount.
+  const created = useRef<string[]>([])
+  useEffect(() => () => created.current.forEach((u) => URL.revokeObjectURL(u)), [])
 
   const run = useCallback(async (fn: () => Promise<unknown>) => {
     setNotice(null)
@@ -66,6 +67,7 @@ export function useTablesAdminViewModel() {
     const key = `${t.id}:${t.qr_token}`
     if (qrUrls[key]) return qrUrls[key]
     const url = URL.createObjectURL(await api.tableQr(t.id))
+    created.current.push(url)
     setQrUrls((m) => ({ ...m, [key]: url }))
     return url
   }, [api, qrUrls])

@@ -11,10 +11,10 @@ export function supabase(): SupabaseClient {
   return client
 }
 
-/** The slice of supabase.auth the app uses, so tests can pass a fake. */
+/** The slice of supabase.auth the app uses, so tests can pass a fake. getSession() refreshes an expired token. */
 export interface AuthClient {
   getSession(): Promise<{ data: { session: { access_token: string } | null } }>
   signInWithPassword(c: { email: string; password: string }): Promise<{ data: { session: { access_token: string } | null }; error: { message: string } | null }>
-  signOut(): Promise<unknown>
+  signOut(options?: { scope?: 'global' | 'local' | 'others' }): Promise<unknown>
   onAuthStateChange(cb: (event: string, session: { access_token: string } | null) => void): { data: { subscription: { unsubscribe(): void } } }
 }

@@ -20,7 +20,8 @@ export function fakeAuthClient(token: string | null = null, signInError: string 
       listener?.('SIGNED_IN', current)
       return { data: { session: current }, error: null }
     }),
-    signOut: vi.fn(async () => {
+    signOut: vi.fn(async (options?: { scope?: 'global' | 'local' | 'others' }) => {
+      void options // recorded by vi.fn for assertions
       current = null
       listener?.('SIGNED_OUT', null)
     }),
@@ -29,7 +30,15 @@ export function fakeAuthClient(token: string | null = null, signInError: string 
       return { data: { subscription: { unsubscribe: () => { listener = null } } } }
     }),
   }
-  return client satisfies AuthClient
+  return Object.assign(client satisfies AuthClient, {
+    /** What supabase-js does on a silent refresh: getSession() starts returning a new token. */
+    rotate: (next: string) => { current = { access_token: next } },
+    /** An auth event that did not come from this tab (e.g. the refresh token was revoked elsewhere). */
+    emit: (event: string) => {
+      if (event === 'SIGNED_OUT') current = null
+      listener?.(event, current)
+    },
+  })
 }
 
 type Handler = (init: RequestInit) => { status: number; body?: unknown }

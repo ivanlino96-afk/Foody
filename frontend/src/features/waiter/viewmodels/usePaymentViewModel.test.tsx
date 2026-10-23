@@ -13,8 +13,9 @@ const TABLE = tableRow({ id: 't8', code: 'T2', status: 'bill_requested', session
 function setup(payment: { status: number; body: unknown } = { status: 201, body: { payment_id: 'p', balance_cents: 0, table_status: 'closed' } }) {
   const fetchMock = stubFetch({ 'GET /me': meAs('waiter'), 'POST /waiter/sessions/s8/payments': payment })
   const onDone = vi.fn()
-  const hook = renderHook(() => ({ vm: usePaymentViewModel(TABLE, onDone), auth: useAuth() }), { wrapper: staffWrapper() })
-  return { ...hook, fetchMock, onDone }
+  const onRefused = vi.fn()
+  const hook = renderHook(() => ({ vm: usePaymentViewModel(TABLE, onDone, onRefused), auth: useAuth() }), { wrapper: staffWrapper() })
+  return { ...hook, fetchMock, onDone, onRefused }
 }
 
 describe('usePaymentViewModel', () => {
@@ -52,10 +53,11 @@ describe('usePaymentViewModel', () => {
   })
 
   it('a conflicting payment keeps the dialog open with the backend message', async () => {
-    const { result, onDone } = setup({ status: 409, body: { code: 'invalid_transition', message: 'Esta cuenta ya está cerrada' } })
+    const { result, onDone, onRefused } = setup({ status: 409, body: { code: 'invalid_transition', message: 'Esta cuenta ya está cerrada' } })
     await waitFor(() => expect(result.current.auth.status).toBe('signed_in'))
     await act(() => result.current.vm.submit())
     expect(result.current.vm.error).toBe('Esta cuenta ya está cerrada')
     expect(onDone).not.toHaveBeenCalled()
+    expect(onRefused).toHaveBeenCalled()
   })
 })

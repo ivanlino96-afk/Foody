@@ -69,4 +69,10 @@ describe('useTablesMapViewModel', () => {
     await act(() => result.current.requestBill())
     expect(result.current.notice).toBe('No hay nada que cobrar')
   })
+
+  it('says when the map could not be refreshed', async () => {
+    stubFetch({ 'GET /me': meAs('waiter'), 'GET /waiter/tables': { status: 500, body: { code: 'error', message: 'boom' } } })
+    const { result } = renderHook(() => useWaiterFeed(), { wrapper: staffWrapper() })
+    await waitFor(() => expect(result.current.error).toBe('No se pudo actualizar; reintentando…'))
+  })
 })

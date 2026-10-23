@@ -9,12 +9,13 @@ import { useDishFormViewModel } from './useDishFormViewModel'
 
 afterEach(() => vi.unstubAllGlobals())
 
-function setup(dish?: Dish) {
+function setup(dish?: Dish, extra: Parameters<typeof stubFetch>[0] = {}) {
   const fetchMock = stubFetch({
     'GET /me': meAs('admin'),
     'POST /admin/menu-items': { status: 201, body: { ...DISH, id: 'new' } },
     'PATCH /admin/menu-items/d1': { status: 200, body: DISH },
     'POST /admin/menu-items/new/photo': { status: 200, body: { photo_path: 'menu/new.jpg' } },
+    ...extra,
   })
   const onSaved = vi.fn()
   const hook = renderHook(() => ({ vm: useDishFormViewModel(dish, OPTIONS, onSaved), auth: useAuth() }), { wrapper: staffWrapper() })
@@ -109,5 +110,28 @@ describe('useDishFormViewModel', () => {
     await act(() => result.current.vm.save())
     const upload = fetchMock.mock.calls.find(([u]) => String(u).endsWith('/admin/menu-items/new/photo'))
     expect(upload?.[1]?.body).toBeInstanceOf(FormData)
+  })
+
+  it('a failed photo upload never creates the dish twice', async () => {
+    const { result, fetchMock, onSaved } = setup(undefined, {
+      'POST /admin/menu-items/new/photo': { status: 503, body: { code: 'service_unavailable', message: 'Storage no configurado' } },
+      'PATCH /admin/menu-items/new': { status: 200, body: DISH },
+    })
+    await waitFor(() => expect(result.current.auth.status).toBe('signed_in'))
+    act(() => {
+      result.current.vm.set('name', 'Bowl')
+      result.current.vm.set('categoryId', 'c1')
+      result.current.vm.set('priceText', '100')
+      result.current.vm.pickPhoto(new File(['x'], 'a.png', { type: 'image/png' }))
+    })
+    await act(() => result.current.vm.save())
+    expect(result.current.vm.error).toBe('El platillo se guardó, pero la foto no se subió: Storage no configurado')
+    await act(() => result.current.vm.save())
+
+    const creates = fetchMock.mock.calls.filter(([u, i]) => String(u).endsWith('/admin/menu-items') && i?.method === 'POST')
+    const uploads = fetchMock.mock.calls.filter(([u]) => String(u).endsWith('/admin/menu-items/new/photo'))
+    expect(creates).toHaveLength(1)
+    expect(uploads).toHaveLength(2)
+    expect(onSaved).not.toHaveBeenCalled()
   })
 })

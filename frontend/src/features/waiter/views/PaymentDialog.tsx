@@ -6,8 +6,9 @@ import { usePaymentViewModel } from '../viewmodels/usePaymentViewModel'
 
 const INPUT = 'min-h-12 w-full rounded-xl border border-linea bg-white px-4 text-base text-carbon outline-none focus:border-bosque'
 
-export function PaymentDialog({ table, onClose, onDone }: { table: TableCard; onClose: () => void; onDone: (r: PaymentResult) => void }) {
-  const vm = usePaymentViewModel(table, onDone)
+export function PaymentDialog({ table, onClose, onDone, onRefused }:
+  { table: TableCard; onClose: () => void; onDone: (r: PaymentResult) => void; onRefused?: () => void }) {
+  const vm = usePaymentViewModel(table, onDone, onRefused)
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center bg-carbon/40 px-4" role="presentation" onClick={onClose}>
       <form role="dialog" aria-modal="true" aria-label={`Registrar cobro ${table.code}`}

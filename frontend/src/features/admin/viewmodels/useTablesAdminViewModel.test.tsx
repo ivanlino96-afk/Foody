@@ -66,4 +66,21 @@ describe('useTablesAdminViewModel', () => {
     await waitFor(() => expect(result.current.tables).toHaveLength(2))
     expect(result.current.dinerUrl(result.current.tables[1])).toBe(`${window.location.origin}/mesa/tok2`)
   })
+
+  it('keeps earlier QR images alive until the screen closes', async () => {
+    const revoke = vi.fn()
+    let n = 0
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => `blob:qr${++n}`), revokeObjectURL: revoke }))
+    const { result, unmount } = setup({
+      'GET /admin/tables/t1/qr.png': { status: 200, body: 'png' },
+      'GET /admin/tables/t2/qr.png': { status: 200, body: 'png' },
+    })
+    await waitFor(() => expect(result.current.tables).toHaveLength(2))
+    await act(async () => { await result.current.loadQr(result.current.tables[0]) })
+    await act(async () => { await result.current.loadQr(result.current.tables[1]) })
+    expect(result.current.qrFor(result.current.tables[0])).toBe('blob:qr1')
+    expect(revoke).not.toHaveBeenCalled()
+    unmount()
+    expect(revoke.mock.calls.map((c) => c[0]).sort()).toEqual(['blob:qr1', 'blob:qr2'])
+  })
 })

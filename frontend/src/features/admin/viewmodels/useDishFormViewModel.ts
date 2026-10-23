@@ -88,6 +88,8 @@ export function useDishFormViewModel(dish: Dish | undefined, options: DishOption
   const [photoError, setPhotoError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Id of a dish this form already created whose photo upload failed: retries update it instead of creating again.
+  const [createdId, setCreatedId] = useState<string | null>(null)
 
   const set = <K extends keyof DishFields>(key: K, value: DishFields[K]) => setFields((f) => ({ ...f, [key]: value }))
 
@@ -106,19 +108,28 @@ export function useDishFormViewModel(dish: Dish | undefined, options: DishOption
     if (!body) return
     setSaving(true)
     setError(null)
+    let id = dish?.id ?? createdId
     try {
-      let id = dish?.id
-      if (!dish) {
+      if (!dish && !createdId) {
         id = (await api.createCatalog<Dish>('menu-items', body)).id
-      } else {
+        setCreatedId(id)
+      } else if (!dish && createdId) {
+        await api.updateCatalog('menu-items', createdId, body)
+      } else if (dish) {
         const original = toBody(fieldsOf(dish), linksOf(dish)).body ?? {}
         const changed = Object.fromEntries(Object.entries(body).filter(([k, v]) => JSON.stringify(v) !== JSON.stringify(original[k])))
         if (Object.keys(changed).length) await api.updateCatalog('menu-items', dish.id, changed)
       }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo guardar el platillo')
+      setSaving(false)
+      return
+    }
+    try {
       if (photoFile && id) await api.uploadPhoto(id, photoFile)
       onSaved()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo guardar el platillo')
+      setError(`El platillo se guardó, pero la foto no se subió: ${err instanceof ApiError ? err.message : 'intenta de nuevo'}`)
     } finally {
       setSaving(false)
     }

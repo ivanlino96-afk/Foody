@@ -14,9 +14,9 @@ export interface OrdersQuery {
 }
 
 /** Typed client for every staff route; `onAuthError` runs on 401/403 so the session can be re-checked. */
-export function staffApi(getToken: () => string | null, onAuthError: (err: ApiError) => void) {
+export function staffApi(getToken: () => string | null | Promise<string | null>, onAuthError: (err: ApiError) => void) {
   const call = async <T>(path: string, init: RequestInit = {}, blob = false): Promise<T> => {
-    const token = getToken()
+    const token = await getToken()
     const headers = { ...(init.headers as Record<string, string>), ...(token ? { Authorization: `Bearer ${token}` } : {}) }
     try {
       return blob ? ((await requestBlob(path, { ...init, headers })) as T) : await request<T>(path, { ...init, headers })

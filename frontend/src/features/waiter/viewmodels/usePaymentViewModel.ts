@@ -7,7 +7,8 @@ import { useAuth } from '../../auth/AuthContext'
 
 const TIP_PCTS = [10, 15, 20]
 
-export function usePaymentViewModel(table: TableMapRow, onDone: (result: PaymentResult) => void) {
+/** `onRefused` runs when the backend rejects the payment (e.g. another waiter already charged) so the map refreshes. */
+export function usePaymentViewModel(table: TableMapRow, onDone: (result: PaymentResult) => void, onRefused?: () => void) {
   const { api } = useAuth()
   const balance = table.balance_cents
   const [method, setMethod] = useState<PaymentMethod>('cash')
@@ -32,6 +33,7 @@ export function usePaymentViewModel(table: TableMapRow, onDone: (result: Payment
       onDone(result)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo registrar el cobro')
+      onRefused?.()
     } finally {
       setSubmitting(false)
     }

@@ -41,4 +41,30 @@ describe('useServiceCallsViewModel', () => {
     await act(() => result.current.alerts[0].run())
     expect(fetchMock.mock.calls.some(([u]) => String(u).endsWith('/waiter/orders/o12/served'))).toBe(true)
   })
+
+  it('a double tap sends the action once', async () => {
+    let release!: () => void
+    const fetchMock = stubFetch({
+      'GET /me': meAs('waiter'),
+      'GET /waiter/tables': { status: 200, body: [] },
+      'GET /kitchen/orders': { status: 200, body: [] },
+      'GET /waiter/service-calls': { status: 200, body: [call({ id: 'c1' })] },
+    })
+    const base = vi.mocked(fetch).getMockImplementation()!
+    vi.mocked(fetch).mockImplementation(async (input, init) => (String(input).endsWith('/attend')
+      ? new Promise<Response>((r) => { release = () => r(new Response(null, { status: 204 })) })
+      : base(input, init)))
+    const { result } = renderHook(() => useServiceCallsViewModel(useWaiterFeed(), vi.fn()), { wrapper: staffWrapper() })
+    await waitFor(() => expect(result.current.alerts).toHaveLength(1))
+
+    let first!: Promise<void>
+    act(() => { first = result.current.alerts[0].run() })
+    expect(result.current.busyKey).toBe('c-c1')
+    await act(async () => { await result.current.alerts[0].run() })
+    await act(async () => { release(); await first })
+
+    expect(fetchMock.mock.calls.filter(([u]) => String(u).endsWith('/attend'))).toHaveLength(1)
+    expect(result.current.notice).toBeNull()
+    expect(result.current.busyKey).toBeNull()
+  })
 })

@@ -65,10 +65,18 @@ export function useKitchenBoardViewModel() {
   const [now, setNow] = useState(() => Date.now())
   const [busyId, setBusyId] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const seen = useRef<Set<string> | null>(null)
 
   const refresh = useCallback(async () => {
-    const next = await api.kitchenOrders()
+    let next: KitchenOrder[]
+    try {
+      next = await api.kitchenOrders()
+      setLoadError(null)
+    } catch (err) {
+      setLoadError('No se pudo actualizar; reintentando…')
+      throw err
+    }
     const received = next.filter((o) => o.status === 'received').map((o) => o.id)
     if (seen.current && received.some((id) => !seen.current!.has(id))) playChime()
     seen.current = new Set([...(seen.current ?? []), ...received])
@@ -115,6 +123,7 @@ export function useKitchenBoardViewModel() {
     connected,
     busyId,
     notice,
+    loadError,
     dismissNotice: () => setNotice(null),
     start: (id: string) => advance(id, 'preparing'),
     markReady: (id: string) => advance(id, 'ready'),

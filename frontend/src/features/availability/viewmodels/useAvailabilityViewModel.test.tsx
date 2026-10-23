@@ -51,6 +51,7 @@ describe('useAvailabilityViewModel', () => {
     expect(result.current.rows[1].isAvailable).toBe(false)
     expect(result.current.offCount).toBe(2)
 
+    await waitFor(() => expect(release).toBeTypeOf('function')) // the request starts after the token check
     await act(async () => { release(); await done })
     expect(result.current.rows[1].isAvailable).toBe(true)
     expect(result.current.notice).toBe('No se pudo guardar')

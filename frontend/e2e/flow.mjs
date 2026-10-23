@@ -53,10 +53,12 @@ async function staffPage(browser, email, viewport, home) {
   await page.getByLabel('Contraseña').fill(PASSWORD)
   await page.getByRole('button', { name: 'Entrar' }).click()
   await page.waitForURL(new RegExp(`${home}$`))
+  pages[email] = page
   return page
 }
 
 const errors = []
+const pages = {}
 mkdirSync(SHOTS, { recursive: true })
 await preflight()
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM ?? '/opt/pw-browsers/chromium' })
@@ -76,6 +78,7 @@ try {
 
   const diner = await (await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage()
   diner.on('pageerror', (e) => errors.push(`comensal: ${e.message}`))
+  pages.comensal = diner
   await diner.goto(`${APP}/mesa/${QR}`)
   await diner.getByRole('button', { name: 'Saltar' }).click()
   await diner.getByRole('link', { name: /^Agregar / }).first().click()
@@ -137,6 +140,12 @@ try {
 
   if (errors.length) throw new Error(`errores en la página: ${errors.join('; ')}`)
   console.log('E2E OK')
+} catch (err) {
+  for (const [name, page] of Object.entries(pages)) {
+    await page.screenshot({ path: `${SHOTS}/fallo-${name.split('@')[0]}.png` }).catch(() => undefined)
+  }
+  console.log(`capturas del fallo en ${SHOTS}/fallo-*.png`)
+  throw err
 } finally {
   await browser.close()
 }

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { ApiError } from '../../../data/api/http'
+import { TABLE_KINDS } from '../../../domain/floor'
 import { formatMoney } from '../../../domain/money'
 import type { KitchenOrder, TableMapRow } from '../../../domain/staffTypes'
 import type { TableStatus } from '../../../domain/types'
@@ -31,6 +32,13 @@ function detailFor(t: TableMapRow, orders: KitchenOrder[]): string {
   }
 }
 
+export interface OrderProgress {
+  received: number
+  preparing: number
+  ready: number
+  served: number
+}
+
 export interface TableCard extends TableMapRow {
   label: string
   meta: string
@@ -38,6 +46,39 @@ export interface TableCard extends TableMapRow {
   fg: string
   detail: string
   orders: KitchenOrder[]
+  kindLabel: string
+  /** "3/4 personas" when open, "4 lugares" otherwise. */
+  people: string
+  /** Minutes since the table was opened (open tables) or since its last change. */
+  minutes: number
+  open: boolean
+  progress: OrderProgress
+  /** Short line under the progress bar: "1 servida · 1 lista · 2 en cocina". */
+  progressLine: string
+  /** Floating badge on the 3D plan: the most urgent thing at this table. */
+  badge: { text: string; color: string } | null
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+
+function progressOf(t: TableMapRow, orders: KitchenOrder[]): OrderProgress {
+  const count = (s: string) => orders.filter((o) => o.status === s).length
+  return { received: count('received'), preparing: count('preparing'), ready: count('ready'), served: t.served_orders }
+}
+
+function progressLine(p: OrderProgress): string {
+  const parts = []
+  if (p.served) parts.push(plural(p.served, 'servida', 'servidas'))
+  if (p.ready) parts.push(plural(p.ready, 'lista', 'listas'))
+  if (p.received + p.preparing) parts.push(`${p.received + p.preparing} en cocina`)
+  return parts.join(' · ')
+}
+
+function badgeFor(t: TableMapRow, p: OrderProgress): TableCard['badge'] {
+  if (t.status === 'bill_requested') return { text: 'Cuenta', color: '#E11D48' }
+  if (t.pending_calls > 0) return { text: 'Llamada', color: '#2B4A6B' }
+  if (p.ready > 0) return { text: p.ready === 1 ? 'Lista' : `${p.ready} listas`, color: '#2F4A3A' }
+  return null
 }
 
 const OCCUPIED: TableStatus[] = ['occupied', 'awaiting_order', 'served', 'bill_requested']
@@ -50,10 +91,27 @@ export function useTablesMapViewModel(feed: WaiterFeed) {
 
   const tables = useMemo<TableCard[]>(() => feed.tables.map((t) => {
     const orders = feed.orders.filter((o) => o.table_code === t.code).sort((a, b) => a.created_at.localeCompare(b.created_at))
-    return { ...t, ...TABLE_STATUS[t.status], meta: t.zone ?? t.label ?? '', detail: detailFor(t, orders), orders }
+    const open = OCCUPIED.includes(t.status)
+    const progress = progressOf(t, orders)
+    const seats = t.capacity ?? 0
+    const people = open && t.guests_count ? `${t.guests_count}${seats ? `/${seats}` : ''} personas`
+      : seats ? plural(seats, 'lugar', 'lugares') : ''
+    return { ...t, ...TABLE_STATUS[t.status], meta: t.zone ?? t.label ?? '', detail: detailFor(t, orders), orders,
+      kindLabel: TABLE_KINDS[t.kind ?? 'table'].label, people, open,
+      minutes: minutesSince(open && t.opened_at ? t.opened_at : t.status_changed_at),
+      progress, progressLine: progressLine(progress), badge: badgeFor(t, progress) }
   }), [feed.tables, feed.orders])
 
   const occupied = tables.filter((t) => OCCUPIED.includes(t.status)).length
+  const stats = {
+    occupied,
+    total: tables.length,
+    guests: tables.reduce((s, t) => s + (t.open ? t.guests_count ?? 0 : 0), 0),
+    seats: tables.reduce((s, t) => s + (t.capacity ?? 0), 0),
+    ready: tables.reduce((s, t) => s + t.progress.ready, 0),
+    bills: tables.filter((t) => t.status === 'bill_requested').length,
+    calls: tables.filter((t) => t.pending_calls > 0).length,
+  }
   const selected = tables.find((t) => t.id === selectedId) ?? null
 
   const run = useCallback(async (action: () => Promise<unknown>) => {
@@ -76,6 +134,7 @@ export function useTablesMapViewModel(feed: WaiterFeed) {
     connected: feed.connected,
     tables,
     occupiedLine: `${occupied} de ${tables.length} ocupadas`,
+    stats,
     legend: Object.values(TABLE_STATUS),
     selected,
     select: setSelectedId,

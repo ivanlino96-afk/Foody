@@ -7,6 +7,7 @@ const NAV = [
   ['/admin/menu', 'Menú'],
   ['/admin/ingredientes', 'Ingredientes y extras'],
   ['/admin/disponibilidad', 'Disponibilidad'],
+  ['/admin/plano', 'Plano del local'],
   ['/admin/mesas', 'Mesas y QR'],
   ['/admin/personal', 'Personal'],
   ['/admin/configuracion', 'Configuración'],

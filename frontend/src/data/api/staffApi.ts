@@ -1,10 +1,17 @@
 import type {
-  AdminTable, AvailabilityBoard, AvailabilityEntity, Dashboard, KitchenOrder, OrderHistoryRow, PaymentMethod,
+  AdminTable, AvailabilityBoard, AvailabilityEntity, Dashboard, FloorAreaRow, FloorLayout, KitchenOrder, OrderHistoryRow, PaymentMethod,
   PaymentResult, RestaurantSettings, ServiceCallRow, StaffProfile, StaffRole, StaffRow, TableMapRow,
 } from '../../domain/staffTypes'
 import { ApiError, request, requestBlob } from './http'
 
 export type CatalogPath = 'categories' | 'ingredients' | 'extras' | 'menu-items'
+
+export interface FloorLayoutIn {
+  areas: { id: string | null; key: string; name: string; kind: string; x: number; y: number; width: number; depth: number }[]
+  tables: { id: string | null; code: string; label: string | null; capacity: number; kind: string; pos_x: number | null
+    pos_y: number | null; rotation: number }[]
+  deleted_table_ids: string[]
+}
 
 export interface OrdersQuery {
   from?: string
@@ -47,6 +54,7 @@ export function staffApi(getToken: () => string | null | Promise<string | null>,
     serveOrder: (id: string) => post(`/waiter/orders/${id}/served`),
     cancelOrder: (id: string, reason: string) => post(`/waiter/orders/${id}/cancel`, { reason }),
     serviceCalls: () => call<ServiceCallRow[]>('/waiter/service-calls'),
+    floorAreas: () => call<FloorAreaRow[]>('/waiter/floor-areas'),
     attendCall: (id: string) => post(`/waiter/service-calls/${id}/attend`),
     registerPayment: (sessionId: string, method: PaymentMethod, amountCents: number, tipCents: number) =>
       post<PaymentResult>(`/waiter/sessions/${sessionId}/payments`, { method, amount_cents: amountCents, tip_cents: tipCents }),
@@ -67,6 +75,8 @@ export function staffApi(getToken: () => string | null | Promise<string | null>,
       return call<{ photo_path: string }>(`/admin/menu-items/${itemId}/photo`, { method: 'POST', body: form })
     },
     adminTables: () => call<AdminTable[]>('/admin/tables'),
+    floor: () => call<FloorLayout>('/admin/floor'),
+    saveFloor: (body: FloorLayoutIn) => call<FloorLayout>('/admin/floor', { method: 'PUT', body: JSON.stringify(body) }),
     createTable: (body: Partial<AdminTable>) => post<AdminTable>('/admin/tables', body),
     updateTable: (id: string, body: Partial<AdminTable>) => patch<AdminTable>(`/admin/tables/${id}`, body),
     deleteTable: (id: string) => call(`/admin/tables/${id}`, { method: 'DELETE' }),

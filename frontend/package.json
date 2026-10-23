@@ -12,10 +12,12 @@
     "e2e": "node e2e/flow.mjs"
   },
   "dependencies": {
+    "@react-three/fiber": "^9.8.2",
     "@supabase/supabase-js": "^2.118.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-router": "^7.18.4"
+    "react-router": "^7.18.4",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
@@ -26,6 +28,7 @@
     "@testing-library/user-event": "^14.6.8",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^4.7.0",
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^5.2.0",

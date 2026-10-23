@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router'
 import type { AdminTable } from '../../../domain/staffTypes'
 import { Button } from '../../../shared/ui/Button'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog'
@@ -43,7 +44,9 @@ export function TablesAdminView() {
 
   return (
     <>
-      <AdminTitle title="Mesas y QR" />
+      <AdminTitle title="Mesas y QR">
+        <Link to="/admin/plano" className="text-sm font-semibold text-bosque">Ubica mesas y áreas en el plano →</Link>
+      </AdminTitle>
       <Notice text={vm.notice ?? qrError} onClose={() => { vm.dismissNotice(); setQrError(null) }} />
       <form className={`${CARD} grid grid-cols-2 items-start gap-3 md:grid-cols-[140px_1fr_1fr_120px_auto]`}
         onSubmit={(e) => { e.preventDefault(); void vm.saveForm() }}>

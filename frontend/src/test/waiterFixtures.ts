@@ -4,7 +4,9 @@ export const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000).toISO
 
 export function tableRow(over: Partial<TableMapRow> = {}): TableMapRow {
   return { id: 't1', code: 'M1', label: null, zone: 'Terraza', status: 'free', status_changed_at: minutesAgo(4),
-    pending_orders: 0, ready_orders: 0, session_id: null, balance_cents: 0, pending_calls: 0, ...over }
+    pending_orders: 0, ready_orders: 0, session_id: null, balance_cents: 0, pending_calls: 0, capacity: 4, kind: 'table',
+    area_id: null, pos_x: null, pos_y: null, rotation: 0, guests_count: null, opened_at: null, consumed_cents: 0,
+    served_orders: 0, ...over }
 }
 
 export function kitchenOrder(over: Partial<KitchenOrder> = {}): KitchenOrder {

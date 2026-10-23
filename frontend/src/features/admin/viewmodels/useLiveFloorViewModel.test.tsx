@@ -44,7 +44,7 @@ describe('useLiveFloorViewModel', () => {
 
   it('selecting a table exposes its full account', async () => {
     const { result } = setup()
-    await waitFor(() => expect(result.current.openTables[0]?.account).not.toBeNull())
+    await waitFor(() => expect(result.current.openTables[0]?.account?.rounds).toHaveLength(2))
     act(() => result.current.select('t1'))
     expect(result.current.selected?.account?.rounds.map((r) => r.daily_number)).toEqual([47, 52])
   })

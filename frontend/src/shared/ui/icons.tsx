@@ -27,3 +27,32 @@ export const AlertIcon = (p: IconProps) => (
   <Icon {...p}><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></Icon>
 )
 export const CheckIcon = (p: IconProps) => <Icon strokeWidth={2.5} {...p}><path d="M5 12l5 5L20 7" /></Icon>
+
+// Admin navigation
+export const GridIcon = (p: IconProps) => (
+  <Icon {...p}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></Icon>
+)
+export const UtensilsIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" /></Icon>
+)
+export const LeafIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" /><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" /></Icon>
+)
+export const ToggleIcon = (p: IconProps) => (
+  <Icon {...p}><rect x="2" y="6" width="20" height="12" rx="6" /><circle cx="16" cy="12" r="2" /></Icon>
+)
+export const MapIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M14.1 5.55a2 2 0 0 0 1.8 0l3.65-1.83A1 1 0 0 1 21 4.62v12.76a1 1 0 0 1-.55.9l-4.56 2.27a2 2 0 0 1-1.78 0l-4.22-2.1a2 2 0 0 0-1.78 0l-3.66 1.83A1 1 0 0 1 3 19.38V6.62a1 1 0 0 1 .55-.9l4.56-2.27a2 2 0 0 1 1.78 0zM15 5.76v15M9 3.24v15" /></Icon>
+)
+export const QrIcon = (p: IconProps) => (
+  <Icon {...p}><rect x="3" y="3" width="5" height="5" rx="1" /><rect x="16" y="3" width="5" height="5" rx="1" /><rect x="3" y="16" width="5" height="5" rx="1" /><path d="M21 16h-3a2 2 0 0 0-2 2v3M21 21v.01M12 7v3a2 2 0 0 1-2 2H7M3 12h.01M12 3h.01M12 16v.01M16 12h1M21 12v.01M12 21v-1" /></Icon>
+)
+export const UsersIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></Icon>
+)
+export const SlidersIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4" /></Icon>
+)
+export const LogoutIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></Icon>
+)

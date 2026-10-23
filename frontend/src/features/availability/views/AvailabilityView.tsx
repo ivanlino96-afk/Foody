@@ -7,7 +7,7 @@ import { useAvailabilityViewModel } from '../viewmodels/useAvailabilityViewModel
 export function AvailabilityView({ backTo }: { backTo?: string }) {
   const vm = useAvailabilityViewModel()
   return (
-    <div className="flex min-h-dvh flex-col bg-avena text-carbon">
+    <div className={`flex flex-col text-carbon ${backTo ? 'min-h-dvh bg-avena' : '-mx-4 -my-6 md:-mx-[30px]'}`}>
       <header className="flex flex-wrap items-center gap-4 border-b border-linea bg-white px-6 py-3.5">
         {backTo && (
           <Link to={backTo} aria-label="Volver a cocina" className="flex size-11 items-center justify-center rounded-xl bg-avena text-carbon">

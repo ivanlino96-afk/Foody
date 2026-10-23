@@ -4,6 +4,9 @@ import { RequireRole, StaffLoading, homeFor } from '../features/auth/RequireRole
 import { LoginView } from '../features/auth/views/LoginView'
 import { AvailabilityView } from '../features/availability/views/AvailabilityView'
 import { KitchenBoardView } from '../features/kitchen/views/KitchenBoardView'
+import { AdminLayout } from '../features/admin/AdminLayout'
+import { DashboardView } from '../features/admin/views/DashboardView'
+import { OrdersView } from '../features/admin/views/OrdersView'
 import { WaiterView } from '../features/waiter/views/WaiterView'
 import { DinerProvider } from '../features/diner/DinerContext'
 import { DinerStatusGate } from '../features/diner/DinerStatusGate'
@@ -12,8 +15,6 @@ import { AccountView } from '../features/diner/views/AccountView'
 import { CartView } from '../features/diner/views/CartView'
 import { DishDetailView } from '../features/diner/views/DishDetailView'
 import { MenuView } from '../features/diner/views/MenuView'
-import type { StaffRole } from '../domain/staffTypes'
-import { StaffHeader } from '../shared/ui/StaffHeader'
 
 function DinerRoot() {
   const { token = '' } = useParams()
@@ -43,14 +44,6 @@ function StaffIndex() {
   return <Navigate to={staff ? homeFor(staff.role) : '/login'} replace />
 }
 
-function AreaPlaceholder({ area }: { area: StaffRole }) {
-  return (
-    <div className="min-h-dvh bg-avena">
-      <StaffHeader area={area} />
-    </div>
-  )
-}
-
 function Home() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-2 bg-bosque px-8 text-center text-white">
@@ -71,7 +64,12 @@ export function AppRoutes() {
         <Route path="/cocina/disponibilidad"
           element={<RequireRole roles={['kitchen']}><AvailabilityView backTo="/cocina" /></RequireRole>} />
         <Route path="/mesero" element={<RequireRole roles={['waiter']}><WaiterView /></RequireRole>} />
-        <Route path="/admin/*" element={<RequireRole roles={['admin']}><AreaPlaceholder area="admin" /></RequireRole>} />
+        <Route path="/admin" element={<RequireRole roles={['admin']}><AdminLayout /></RequireRole>}>
+          <Route index element={<DashboardView />} />
+          <Route path="ordenes" element={<OrdersView />} />
+          <Route path="disponibilidad" element={<AvailabilityView />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
+        </Route>
       </Route>
       <Route path="*" element={<Home />} />
     </Routes>

@@ -32,7 +32,7 @@ export const LIVE_DEBOUNCE_MS = 300
 
 /**
  * Refetches through the API whenever one of `tables` changes (debounced), and keeps polling every
- * `fallbackMs` no matter what, so a dropped socket only slows updates down.
+ * `fallbackMs` no matter what, so a dropped socket only slows updates down. No tables: polling only.
  */
 export function useLiveRefresh(tables: string[], refresh: () => Promise<unknown>, fallbackMs: number): { connected: boolean } {
   const source = useContext(RealtimeContext)
@@ -44,6 +44,10 @@ export function useLiveRefresh(tables: string[], refresh: () => Promise<unknown>
   const key = tables.join(',')
 
   useEffect(() => {
+    if (!key) {
+      setConnected(false)
+      return
+    }
     let timer: number | undefined
     const unsubscribe = source.subscribe(key.split(','), () => {
       window.clearTimeout(timer)

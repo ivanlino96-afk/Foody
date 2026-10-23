@@ -4,6 +4,7 @@ import { RequireRole, StaffLoading, homeFor } from '../features/auth/RequireRole
 import { LoginView } from '../features/auth/views/LoginView'
 import { AvailabilityView } from '../features/availability/views/AvailabilityView'
 import { KitchenBoardView } from '../features/kitchen/views/KitchenBoardView'
+import { WaiterView } from '../features/waiter/views/WaiterView'
 import { DinerProvider } from '../features/diner/DinerContext'
 import { DinerStatusGate } from '../features/diner/DinerStatusGate'
 import { SplashGate } from '../features/diner/SplashGate'
@@ -69,7 +70,7 @@ export function AppRoutes() {
         <Route path="/cocina" element={<RequireRole roles={['kitchen']}><KitchenBoardView /></RequireRole>} />
         <Route path="/cocina/disponibilidad"
           element={<RequireRole roles={['kitchen']}><AvailabilityView backTo="/cocina" /></RequireRole>} />
-        <Route path="/mesero/*" element={<RequireRole roles={['waiter']}><AreaPlaceholder area="waiter" /></RequireRole>} />
+        <Route path="/mesero" element={<RequireRole roles={['waiter']}><WaiterView /></RequireRole>} />
         <Route path="/admin/*" element={<RequireRole roles={['admin']}><AreaPlaceholder area="admin" /></RequireRole>} />
       </Route>
       <Route path="*" element={<Home />} />

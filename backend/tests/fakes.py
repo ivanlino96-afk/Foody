@@ -14,6 +14,7 @@ from app.domain.entities import (
     ItemIngredient,
     MenuItem,
     Order,
+    ServiceCall,
     StatusChange,
     TableSession,
 )
@@ -80,6 +81,7 @@ class _State:
     staff: dict[UUID, StaffMember] = field(default_factory=dict)
     daily: dict[date, int] = field(default_factory=dict)
     auto_release_minutes: int = 5
+    service_calls: dict[UUID, ServiceCall] = field(default_factory=dict)
 
 
 class _Tables:
@@ -191,6 +193,27 @@ class _Settings:
         return self._uow.state.auto_release_minutes
 
 
+class _ServiceCalls:
+    def __init__(self, uow: "InMemoryUnitOfWork") -> None:
+        self._uow = uow
+
+    def add(self, call):
+        self._uow.state.service_calls[call.id] = call
+
+    save = add
+
+    def get_for_update(self, call_id):
+        return self._uow.state.service_calls.get(call_id)
+
+    def pending_for_session(self, session_id, call_type):
+        return next((c for c in self._uow.state.service_calls.values()
+                     if c.session_id == session_id and c.type == call_type and c.attended_at is None), None)
+
+    def list_pending(self):
+        return sorted((c for c in self._uow.state.service_calls.values() if c.attended_at is None),
+                      key=lambda c: c.created_at)
+
+
 class InMemoryUnitOfWork:
     def __init__(self) -> None:
         self.state = _State()
@@ -203,6 +226,7 @@ class InMemoryUnitOfWork:
         self.history = _History(self)
         self.staff = _Staff(self)
         self.settings = _Settings(self)
+        self.service_calls = _ServiceCalls(self)
 
     def __enter__(self):
         self._snapshot = copy.deepcopy(self.state)

@@ -3,7 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from app.domain.entities import MenuItem
-from app.domain.enums import OrderStatus, StaffRole, TableStatus
+from app.domain.enums import OrderStatus, ServiceCallType, StaffRole, TableStatus
 
 
 @dataclass(frozen=True)
@@ -95,6 +95,8 @@ class DinerSessionView:
     tip_cents: int
     paid_cents: int
     balance_cents: int
+    bill_requested: bool = False
+    pending_calls: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -118,3 +120,11 @@ class TableMapView:
     status_changed_at: datetime
     pending_orders: int
     ready_orders: int
+
+
+@dataclass(frozen=True)
+class ServiceCallView:
+    id: UUID
+    table_code: str
+    type: ServiceCallType
+    created_at: datetime

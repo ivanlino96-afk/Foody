@@ -12,9 +12,10 @@ from app.application.dto import (
 )
 from app.application.ports import UnitOfWork
 from app.domain.entities import MenuItem, Order
-from app.domain.enums import OrderStatus
+from app.domain.enums import OrderStatus, ServiceCallType, TableStatus
 from app.domain.errors import NotFound
 from app.domain.services.availability import extra_available, item_availability
+from app.domain.services.billing import balance_cents
 from app.domain.services.pricing import PricedLine
 from app.domain.services.table_state_machine import can_order
 
@@ -81,8 +82,9 @@ def get_diner_session(uow: UnitOfWork, qr_token: str) -> DinerSessionView | None
         if session is None or session.closed_at is not None:
             return None
         rounds = [_round_view(o) for o in uow.orders.list_by_session(session.id)]
-        balance = session.subtotal_cents + session.tip_cents - session.paid_cents
-        return DinerSessionView(rounds, session.subtotal_cents, session.tip_cents, session.paid_cents, balance)
+        pending = [t.value for t in ServiceCallType if uow.service_calls.pending_for_session(session.id, t)]
+        return DinerSessionView(rounds, session.subtotal_cents, session.tip_cents, session.paid_cents,
+                                balance_cents(session), table.status == TableStatus.BILL_REQUESTED, pending)
 
 
 def get_active_orders(uow: UnitOfWork) -> list[KitchenOrderView]:

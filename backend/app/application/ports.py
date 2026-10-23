@@ -4,8 +4,8 @@ from typing import Protocol, Self
 from uuid import UUID
 
 from app.application.dto import MenuCategoryView, StaffMember
-from app.domain.entities import DiningTable, MenuItem, Order, StatusChange, TableSession
-from app.domain.enums import OrderStatus, TableStatus
+from app.domain.entities import DiningTable, MenuItem, Order, ServiceCall, StatusChange, TableSession
+from app.domain.enums import OrderStatus, ServiceCallType, TableStatus
 
 
 class Clock(Protocol):
@@ -78,6 +78,18 @@ class SettingsRepository(Protocol):
     def auto_release_minutes(self) -> int: ...
 
 
+class ServiceCallRepository(Protocol):
+    def add(self, call: ServiceCall) -> None: ...
+
+    def get_for_update(self, call_id: UUID) -> ServiceCall | None: ...
+
+    def save(self, call: ServiceCall) -> None: ...
+
+    def pending_for_session(self, session_id: UUID, call_type: ServiceCallType) -> ServiceCall | None: ...
+
+    def list_pending(self) -> list[ServiceCall]: ...
+
+
 class UnitOfWork(Protocol):
     tables: TableRepository
     sessions: SessionRepository
@@ -86,6 +98,7 @@ class UnitOfWork(Protocol):
     history: HistoryRepository
     staff: StaffRepository
     settings: SettingsRepository
+    service_calls: ServiceCallRepository
 
     def __enter__(self) -> Self: ...
 

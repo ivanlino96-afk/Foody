@@ -143,7 +143,7 @@ function Summary({ vm }: { vm: FloorEditorViewModel }) {
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-3 gap-2">
         {[['Áreas', vm.areas.length], ['Mesas', s.tables], ['Lugares', s.seats]].map(([label, n]) => (
-          <div key={label} className="flex flex-col rounded-xl bg-avena px-3 py-2.5">
+          <div key={label} className="flex flex-col rounded-xl bg-arena px-3 py-2.5">
             <span className="text-[22px] leading-tight font-extrabold">{n}</span>
             <span className="text-xs font-semibold text-musgo">{label}</span>
           </div>
@@ -152,7 +152,7 @@ function Summary({ vm }: { vm: FloorEditorViewModel }) {
       <div className="flex flex-col">
         {s.byArea.map(({ area, tables, seats }) => (
           <button key={area.key} type="button" onClick={() => vm.select({ type: 'area', key: area.key })}
-            className="flex min-h-11 items-center gap-2.5 rounded-lg px-2 text-left text-sm hover:bg-avena">
+            className="flex min-h-11 items-center gap-2.5 rounded-lg px-2 text-left text-sm hover:bg-arena">
             <span className="size-2.5 rounded-full" style={{ background: AREA_DOT[area.kind] }} />
             <span className="font-bold">{area.name}</span>
             <span className="ml-auto text-musgo">{tables} {tables === 1 ? 'mesa' : 'mesas'} · {seats} lug.</span>
@@ -248,7 +248,7 @@ export function FloorEditorView() {
                 {areaMenu && (
                   <div className="absolute top-12 left-0 z-10 flex w-44 flex-col rounded-xl bg-white p-1.5 shadow-[0_12px_32px_rgba(27,30,27,0.18)]">
                     {AREA_ORDER.map((k) => (
-                      <button key={k} type="button" className="flex min-h-10 items-center gap-2 rounded-lg px-2.5 text-left text-sm font-semibold hover:bg-avena"
+                      <button key={k} type="button" className="flex min-h-10 items-center gap-2 rounded-lg px-2.5 text-left text-sm font-semibold hover:bg-arena"
                         onClick={() => { vm.addArea(k); setAreaMenu(false) }}>
                         <span className="size-2.5 rounded-full" style={{ background: AREA_DOT[k] }} />{AREA_KINDS[k].label}
                       </button>

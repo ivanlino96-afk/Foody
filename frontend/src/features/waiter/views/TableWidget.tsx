@@ -31,7 +31,7 @@ export function TableWidget({ t, onSelect }: { t: TableCard; onSelect(id: string
   return (
     <button type="button" onClick={() => onSelect(t.id)} aria-label={`Mesa ${t.code}, ${t.label}`}
       className={`group relative flex min-h-[176px] flex-col gap-2.5 overflow-hidden rounded-2xl bg-white py-3.5 pr-3.5 pl-5 text-left text-carbon transition hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(27,30,27,0.12)] ${
-        urgent ? 'ring-2 ring-[#E11D48]' : 'shadow-[0_1px_3px_rgba(27,30,27,0.08)]'} ${t.status === 'free' ? 'bg-white/80' : ''}`}>
+        urgent ? 'ring-2 ring-[#E11D48]' : 'border border-linea'} `}>
       <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: t.color }} />
       <span className="flex w-full items-start gap-2">
         <span className="flex flex-col">
@@ -42,7 +42,7 @@ export function TableWidget({ t, onSelect }: { t: TableCard; onSelect(id: string
           <span className="mt-1 text-xs font-semibold text-musgo">{[t.meta, t.people].filter(Boolean).join(' · ')}</span>
         </span>
         {t.open && (
-          <span className={`ml-auto flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold ${late ? 'bg-[#FFE4E6] text-[#9F1239]' : 'bg-avena text-[#44483F]'}`}>
+          <span className={`ml-auto flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold ${late ? 'bg-[#FFE4E6] text-[#9F1239]' : 'bg-arena text-[#44483F]'}`}>
             <Clock />{elapsed(t.minutes)}
           </span>
         )}

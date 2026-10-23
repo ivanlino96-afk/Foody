@@ -73,10 +73,10 @@ export function TablesAdminView() {
               {qr ? <img src={qr} alt={`QR de la mesa ${t.code}`} className="size-40 self-center" />
                 : <Button variant="soft" className="!min-h-11 !py-2" onClick={() => void showQr(t)}>Ver QR</Button>}
               <div className="flex flex-wrap gap-1">
-                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-avena"
+                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-arena"
                   onClick={async () => { await showQr(t); setPrinting(t) }}>Imprimir</button>
-                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-avena" onClick={() => vm.editTable(t)}>Editar</button>
-                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-avena" onClick={() => vm.askRegenerate(t)}>Regenerar QR</button>
+                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-arena" onClick={() => vm.editTable(t)}>Editar</button>
+                <button type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold hover:bg-arena" onClick={() => vm.askRegenerate(t)}>Regenerar QR</button>
                 <button type="button" className="ml-auto min-h-11 rounded-lg px-2 text-sm font-semibold text-[#B42318]" onClick={() => vm.askDelete(t)}>Borrar</button>
               </div>
             </section>

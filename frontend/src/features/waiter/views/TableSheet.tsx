@@ -66,7 +66,7 @@ export function TableSheet(p: Props) {
         <section className="flex flex-col gap-2">
           <h3 className="m-0 text-base font-extrabold">Órdenes activas</h3>
           {table.orders.map((o) => (
-            <div key={o.id} className="flex flex-col gap-2 rounded-xl bg-avena p-3">
+            <div key={o.id} className="flex flex-col gap-2 rounded-xl bg-arena p-3">
               <div className="flex items-center gap-2 text-sm">
                 <span className="font-extrabold">#{String(o.daily_number).padStart(3, '0')}</span>
                 <span>R{o.round_number}</span>

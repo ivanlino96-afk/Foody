@@ -17,11 +17,11 @@ export function CartView() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col bg-avena">
-      <header className="flex items-center gap-3 bg-white px-5 py-4 shadow-[0_1px_0_#E3DED3]">
-        <Link to={menuHref} aria-label="Volver al menú" className="flex h-11 w-11 items-center justify-center rounded-xl bg-arena text-carbon"><BackIcon /></Link>
+      <header className="flex items-center gap-3 bg-bosque px-5 py-4 text-white">
+        <Link to={menuHref} aria-label="Volver al menú" className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-white"><BackIcon /></Link>
         <div className="flex flex-col">
           <h1 className="m-0 text-xl font-extrabold tracking-[-0.02em]">Tu pedido</h1>
-          <span className="text-[13px] text-musgo">{table ? `Mesa ${table.code} · ronda ${vm.roundNumber}` : ''}</span>
+          <span className="text-[13px] text-niebla">{table ? `Mesa ${table.code} · ronda ${vm.roundNumber}` : ''}</span>
         </div>
       </header>
 
@@ -41,7 +41,7 @@ export function CartView() {
           </div>
         )}
 
-        <section className="rounded-2xl bg-white px-4 py-1 shadow-[0_1px_3px_rgba(27,30,27,0.06)]">
+        <section className="rounded-2xl bg-white px-4 py-1 border border-linea">
           {vm.lines.length === 0 && <p className="py-6 text-center text-[15px] text-musgo">Aún no agregas platillos.</p>}
           {vm.lines.map((l) => (
             <div key={l.key} className="flex gap-3 border-b border-arena py-3.5">
@@ -74,7 +74,7 @@ export function CartView() {
           </Link>
         </section>
 
-        <section className="flex flex-col gap-2 rounded-2xl bg-white px-4 py-3.5 shadow-[0_1px_3px_rgba(27,30,27,0.06)]">
+        <section className="flex flex-col gap-2 rounded-2xl bg-white px-4 py-3.5 border border-linea">
           <div className="flex justify-between text-sm text-musgo"><span>Esta ronda</span><span className="font-bold text-carbon">{formatMoney(vm.roundCents)}</span></div>
           {vm.previousRoundsCents > 0 && (
             <div className="flex justify-between text-sm text-musgo"><span>Rondas anteriores</span><span>{formatMoney(vm.previousRoundsCents)}</span></div>

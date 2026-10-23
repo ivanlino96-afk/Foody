@@ -1,9 +1,9 @@
-/** "Conectado" / "Reconectando" pill for screens fed by Realtime with polling fallback. */
+/** "Conectado" / "Reconectando" pill (on the green staff header) for screens fed by Realtime with polling fallback. */
 export function ConnectionDot({ connected }: { connected: boolean }) {
   return (
-    <span className={`flex items-center gap-1.5 text-sm font-semibold ${connected ? 'text-bosque-oscuro' : 'text-[#6F4A22]'}`}
+    <span className={`flex items-center gap-1.5 text-sm font-semibold ${connected ? 'text-niebla' : 'text-[#F3D9B8]'}`}
       role="status">
-      <span className={`size-2 rounded-full ${connected ? 'bg-[#5E8C6A]' : 'animate-pulse bg-[#B98552]'}`} />
+      <span className={`size-2 rounded-full ${connected ? 'bg-[#8FD0A0]' : 'animate-pulse bg-trigo'}`} />
       {connected ? 'Conectado' : 'Reconectando'}
     </span>
   )

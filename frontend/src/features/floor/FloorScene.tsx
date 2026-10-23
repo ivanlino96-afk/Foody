@@ -418,7 +418,7 @@ function Scene(p: FloorSceneProps) {
 
   return (
     <>
-      <color attach="background" args={['#F4F1EA']} />
+      <color attach="background" args={['#FFFFFF']} />
       <hemisphereLight args={['#FFFFFF', '#E6DFD2', 1.8]} />
       <directionalLight ref={sun} position={[center[0] - span * 0.9, span * 0.85, center[1] - span * 0.45]} intensity={1.45} castShadow
         shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02}
@@ -455,7 +455,7 @@ function Scene(p: FloorSceneProps) {
 /** The floor plan as a white 3D maquette: orbit with one finger or the mouse, zoom with pinch or the wheel. */
 export function FloorScene({ className = '', ...props }: FloorSceneProps & { className?: string }) {
   return (
-    <div className={`relative overflow-hidden rounded-[18px] bg-avena ${className}`}>
+    <div className={`relative overflow-hidden rounded-[18px] border border-linea bg-white ${className}`}>
       <Canvas shadows flat frameloop="demand" onCreated={(s) => { if (import.meta.env.DEV) (window as unknown as { __r3f: unknown }).__r3f = s }} dpr={[1, 2]} camera={{ fov: 32, near: 0.1, far: 500, position: [10, 14, 22] }}
         onPointerMissed={(e) => { if (e.type === 'click') props.onSelect?.(null) }}>
         <Scene {...props} />

@@ -16,7 +16,7 @@ const HEAD: Record<Ticket['status'], string> = {
 function TicketCard({ t, busy, onAction }: { t: Ticket; busy: boolean; onAction: () => void }) {
   return (
     <article aria-label={`Orden ${t.number} mesa ${t.table}`}
-      className={`flex flex-col overflow-hidden rounded-[14px] bg-white ${t.late ? 'ring-2 ring-[#B91C1C]' : 'shadow-[0_1px_3px_rgba(27,30,27,0.08)]'}`}>
+      className={`flex flex-col overflow-hidden rounded-[14px] bg-white ${t.late ? 'ring-2 ring-[#B91C1C]' : 'border border-linea'}`}>
       <div className={`flex items-center gap-2.5 px-3.5 py-2.5 ${t.late ? 'bg-[#B91C1C] text-white' : HEAD[t.status]}`}>
         <span className="text-xl font-extrabold">{t.number}</span>
         <span className="text-[15px] font-bold">{t.table}</span>
@@ -28,7 +28,7 @@ function TicketCard({ t, busy, onAction }: { t: Ticket; busy: boolean; onAction:
         {t.items.map((it, i) => (
           <div key={i} className="flex flex-col gap-1.5">
             <div className="flex gap-2.5">
-              <span className="flex size-6 flex-none items-center justify-center rounded-md bg-avena text-[15px] font-extrabold">{it.qty}</span>
+              <span className="flex size-6 flex-none items-center justify-center rounded-md bg-arena text-[15px] font-extrabold">{it.qty}</span>
               <div className="flex flex-col gap-0.5">
                 <span className="text-[15px] font-bold">{it.name}</span>
                 {it.mods.map((m) => (
@@ -43,7 +43,7 @@ function TicketCard({ t, busy, onAction }: { t: Ticket; busy: boolean; onAction:
         ))}
         {t.action ? (
           <button type="button" disabled={busy} onClick={onAction}
-            className={`min-h-11 rounded-[10px] text-sm font-bold text-white disabled:opacity-60 ${t.status === 'received' ? 'bg-carbon' : 'bg-bosque'}`}>
+            className={`min-h-11 rounded-[10px] text-sm font-bold text-white disabled:opacity-60 bg-bosque`}>
             {busy ? 'Guardando…' : t.action}
           </button>
         ) : (
@@ -68,14 +68,14 @@ export function KitchenBoardView() {
   return (
     <div className="flex min-h-dvh flex-col bg-avena text-carbon">
       <StaffHeader area="kitchen">
-        <span className="text-sm text-musgo">
+        <span className="text-sm text-niebla">
           {vm.activeCount} {vm.activeCount === 1 ? 'orden activa' : 'órdenes activas'}
           {vm.avgPrepMinutes !== null && ` · en cocina ${vm.avgPrepMinutes} min prom.`}
         </span>
         <span className="ml-auto flex items-center gap-4">
           <ConnectionDot connected={vm.connected} />
           <span className="text-xl font-extrabold tabular-nums">{clock}</span>
-          <Link to="/cocina/disponibilidad" className="flex min-h-11 items-center rounded-xl bg-avena px-4 text-sm font-bold text-carbon no-underline">
+          <Link to="/cocina/disponibilidad" className="flex min-h-11 items-center rounded-xl bg-white px-4 text-sm font-bold text-bosque no-underline">
             Disponibilidad
           </Link>
         </span>

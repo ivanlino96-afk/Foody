@@ -6,8 +6,11 @@
   --color-hoja: #e4ece6;
   --color-hoja-claro: #eef3ef;
   --color-madera: #a8784c;
-  --color-avena: #f4f1ea;
-  --color-arena: #eeeae1;
+  /* Blanco con bloques verdes: pages are white and soft fills a pale green, never grey. */
+  --color-avena: #ffffff;
+  --color-arena: #eef3ef;
+  --color-niebla: #d5e2d8;
+  --color-trigo: #d6a262;
   --color-carbon: #1b1e1b;
   --color-musgo: #5a615b;
   --color-linea: #e3ded3;

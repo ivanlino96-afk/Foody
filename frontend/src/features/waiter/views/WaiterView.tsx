@@ -19,7 +19,7 @@ const CHIP: Record<AlertKind, string> = {
   Llamada: 'bg-[#E0E7EF] text-[#2B4A6B]',
   Cuenta: 'bg-[#FFE4E6] text-[#9F1239]',
 }
-const ALERT_BTN: Record<AlertKind, string> = { Lista: 'bg-bosque text-white', Llamada: 'bg-avena text-carbon', Cuenta: 'bg-carbon text-white' }
+const ALERT_BTN: Record<AlertKind, string> = { Lista: 'bg-bosque text-white', Llamada: 'bg-arena text-carbon', Cuenta: 'bg-carbon text-white' }
 const SEG = (on: boolean) => `min-h-10 rounded-lg px-3.5 text-sm font-bold ${on ? 'bg-white text-carbon shadow-[0_1px_2px_rgba(0,0,0,0.12)]' : 'text-musgo'}`
 
 type Mode = 'cards' | 'plan'
@@ -74,7 +74,7 @@ export function WaiterView() {
       <StaffHeader area="waiter">
         <span className="ml-auto flex items-center gap-4">
           <ConnectionDot connected={feed.connected} />
-          <span className="text-sm text-musgo">{map.occupiedLine}</span>
+          <span className="text-sm text-niebla">{map.occupiedLine}</span>
         </span>
       </StaffHeader>
       <Notice text={map.notice ?? calls.notice ?? feed.error}
@@ -88,7 +88,7 @@ export function WaiterView() {
               ['Listas para servir', String(s.ready), null],
               ['Cuentas pedidas', String(s.bills), null],
             ].map(([label, value, pct]) => (
-              <div key={label as string} className="flex flex-col gap-1 rounded-2xl bg-white px-4 py-3 shadow-[0_1px_3px_rgba(27,30,27,0.06)]">
+              <div key={label as string} className="flex flex-col gap-1 rounded-2xl bg-white px-4 py-3 border border-linea">
                 <span className="text-xs font-semibold text-musgo">{label}</span>
                 <span className="flex items-baseline gap-2">
                   <span className="text-2xl font-extrabold tracking-tight">{value}</span>
@@ -110,7 +110,7 @@ export function WaiterView() {
               <div className="flex flex-wrap gap-1.5">
                 {[{ key: null, name: 'Todas' }, ...groups].map((g) => (
                   <button key={g.key ?? 'all'} type="button" onClick={() => setAreaFilter(g.key)} aria-pressed={areaFilter === g.key}
-                    className={`min-h-10 rounded-full px-3.5 text-[13px] font-bold ${areaFilter === g.key ? 'bg-carbon text-white' : 'bg-white text-[#44483F]'}`}>
+                    className={`min-h-10 rounded-full px-3.5 text-[13px] font-bold ${areaFilter === g.key ? 'border border-bosque bg-bosque text-white' : 'border border-linea bg-white text-[#44483F]'}`}>
                     {g.name}
                   </button>
                 ))}
@@ -159,7 +159,7 @@ export function WaiterView() {
           <h2 className="m-0 text-lg font-extrabold">Avisos · {calls.alerts.length}</h2>
           {calls.alerts.length === 0 && !feed.loading && !feed.error && <p className="m-0 text-sm text-musgo">Todo en orden.</p>}
           {calls.alerts.map((a) => (
-            <div key={a.key} className="flex flex-col gap-2.5 rounded-[14px] bg-white p-3.5 shadow-[0_1px_3px_rgba(27,30,27,0.08)]">
+            <div key={a.key} className="flex flex-col gap-2.5 rounded-[14px] bg-white p-3.5 border border-linea">
               <div className="flex items-center gap-2">
                 <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${CHIP[a.kind]}`}>{a.kind}</span>
                 <span className="text-[15px] font-extrabold">{a.table}</span>

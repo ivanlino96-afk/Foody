@@ -146,3 +146,26 @@ class AvailabilityBoardView:
     items: list[AvailabilityRow]
     ingredients: list[AvailabilityRow]
     extras: list[AvailabilityRow]
+
+
+@dataclass(frozen=True)
+class HourSales:
+    hour: int
+    sales_cents: int
+
+
+@dataclass(frozen=True)
+class DashboardView:
+    sales_cents: int
+    tips_cents: int
+    profit_cents: int
+    margin_pct: float
+    orders_count: int
+    cancelled_count: int
+    cancel_reasons: list[str]
+    avg_ticket_cents: int
+    avg_prep_seconds: int | None
+    avg_delivery_seconds: int | None
+    occupied_tables: int
+    total_tables: int
+    sales_by_hour: list[HourSales]

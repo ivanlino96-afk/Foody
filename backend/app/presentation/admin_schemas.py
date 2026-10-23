@@ -1,6 +1,9 @@
+from typing import Annotated
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from app.domain.enums import StaffRole
 
 _NAME = {"min_length": 1, "max_length": 80, "pattern": r"^[^\x00]*$"}
 Name = Field(**_NAME)
@@ -102,3 +105,22 @@ class TablePatch(BaseModel):
     zone: str | None = Field(None, max_length=40)
     capacity: int | None = Field(None, ge=1, le=50)
     sort_order: int | None = None
+
+
+class StaffIn(BaseModel):
+    email: str = Field(max_length=254, pattern=r"^[^@\s\x00]+@[^@\s\x00]+\.[^@\s\x00]+$")
+    password: str = Field(min_length=8, max_length=72)
+    full_name: str = Name
+    role: StaffRole
+
+
+class StaffPatch(BaseModel):
+    full_name: str | None = OptionalName
+    role: StaffRole | None = None
+    is_active: bool | None = None
+
+
+class SettingsIn(BaseModel):
+    name: str = Name
+    auto_release_minutes: int = Field(ge=0, le=240)
+    tip_options: list[Annotated[int, Field(ge=1, le=100)]] = Field(min_length=1, max_length=5)

@@ -73,9 +73,42 @@ class HistoryRepository(Protocol):
 class StaffRepository(Protocol):
     def get(self, staff_id: UUID) -> StaffMember | None: ...
 
+    def list_all(self) -> list[dict]: ...
+
+    def add(self, member: StaffMember, created_by: UUID) -> None: ...
+
+    def update(self, staff_id: UUID, values: dict, updated_by: UUID) -> None: ...
+
 
 class SettingsRepository(Protocol):
     def auto_release_minutes(self) -> int: ...
+
+    def get(self) -> dict: ...
+
+    def update(self, values: dict, staff_id: UUID) -> None: ...
+
+
+class ReportsRepository(Protocol):
+    """Read-only queries for the admin; windows are half-open [start, end)."""
+
+    def orders_history(self, start: datetime, end: datetime, status: OrderStatus | None, table_code: str | None,
+                       limit: int) -> list[dict]: ...
+
+    def approved_payments(self, start: datetime, end: datetime) -> list[tuple[int, int, datetime]]: ...
+
+    def paid_sessions(self, start: datetime, end: datetime) -> tuple[int, int]:
+        """(sessions with paid_at in the window, cost of their non-cancelled orders)."""
+        ...
+
+    def orders_created(self, start: datetime, end: datetime) -> list[Order]: ...
+
+    def table_counts(self) -> tuple[int, int]:
+        """(tables not free, active tables)."""
+        ...
+
+
+class AuthAdmin(Protocol):
+    def create_user(self, email: str, password: str) -> UUID: ...
 
 
 class ServiceCallRepository(Protocol):
@@ -142,6 +175,7 @@ class UnitOfWork(Protocol):
     payments: PaymentRepository
     availability: AvailabilityRepository
     catalog: CatalogRepository
+    reports: ReportsRepository
 
     def __enter__(self) -> Self: ...
 

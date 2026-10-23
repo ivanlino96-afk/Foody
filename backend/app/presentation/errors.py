@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.domain.errors import (
     DomainError,
+    DuplicateEmail,
     Forbidden,
     InvalidCustomization,
     InvalidTransition,
@@ -45,6 +46,7 @@ STATUS_BY_ERROR: dict[type[DomainError], int] = {
     Unauthorized: 401,
     RateLimited: 429,
     Conflict: 409,
+    DuplicateEmail: 409,
     InvalidReference: 422,
     ServiceUnavailable: 503,
     NotFound: 404,

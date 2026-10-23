@@ -5,9 +5,10 @@ from uuid import UUID
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.application.ports import Clock, PhotoStorage, UnitOfWork
+from app.application.ports import AuthAdmin, Clock, PhotoStorage, UnitOfWork
 from app.domain.enums import StaffRole
 from app.domain.errors import Forbidden
+from app.infrastructure.auth.auth_admin import SupabaseAuthAdmin
 from app.infrastructure.auth.jwt_verifier import JwtVerifier
 from app.infrastructure.clock import SystemClock
 from app.infrastructure.db.unit_of_work import SqlUnitOfWork
@@ -37,6 +38,13 @@ def get_photo_storage(request: Request) -> PhotoStorage:
     if not settings.supabase_service_role_key:
         raise ServiceUnavailable("Falta SUPABASE_SERVICE_ROLE_KEY para subir fotos")
     return SupabasePhotoStorage(settings.supabase_url, settings.supabase_service_role_key)
+
+
+def get_auth_admin(request: Request) -> AuthAdmin:
+    settings = request.app.state.settings
+    if not settings.supabase_service_role_key:
+        raise ServiceUnavailable("Falta SUPABASE_SERVICE_ROLE_KEY para crear usuarios")
+    return SupabaseAuthAdmin(settings.supabase_url, settings.supabase_service_role_key)
 
 
 def get_verifier(request: Request) -> JwtVerifier:

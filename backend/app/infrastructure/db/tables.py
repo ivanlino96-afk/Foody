@@ -22,10 +22,14 @@ def _uuid(name: str, **kw) -> Column:
 
 
 staff = Table("staff", metadata, _uuid("id", primary_key=True), Column("full_name", Text),
-              Column("role", staff_role), Column("is_active", Boolean))
+              Column("role", staff_role), Column("is_active", Boolean), Column("created_at", DateTime(timezone=True)),
+              _uuid("created_by"), _uuid("updated_by"))
 
-restaurant_settings = Table("restaurant_settings", metadata, _uuid("id", primary_key=True),
-                            Column("auto_release_minutes", Integer))
+auth_users = Table("users", metadata, _uuid("id", primary_key=True), Column("email", Text), schema="auth")
+
+restaurant_settings = Table("restaurant_settings", metadata, _uuid("id", primary_key=True), Column("name", Text),
+                            Column("auto_release_minutes", Integer), Column("tip_options", ARRAY(Integer)),
+                            _uuid("updated_by"))
 
 dining_tables = Table(
     "dining_tables", metadata, _uuid("id", primary_key=True), Column("code", Text), Column("label", Text),

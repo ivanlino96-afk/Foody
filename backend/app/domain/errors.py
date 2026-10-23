@@ -47,6 +47,11 @@ class NotFound(DomainError):
     default_message = "No encontrado"
 
 
+class DuplicateEmail(DomainError):
+    code = "conflict"
+    default_message = "Ya existe un usuario con ese correo"
+
+
 class Forbidden(DomainError):
     code = "forbidden"
     default_message = "No tienes permiso para esta acción"

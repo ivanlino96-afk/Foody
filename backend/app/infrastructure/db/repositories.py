@@ -300,6 +300,21 @@ class SqlStaffRepository:
         row = self._conn.execute(select(t.staff).where(t.staff.c.id == staff_id)).first()
         return StaffMember(row.id, row.full_name, StaffRole(row.role), row.is_active) if row else None
 
+    def list_all(self) -> list[dict]:
+        s, u = t.staff, t.auth_users
+        rows = self._conn.execute(select(s.c.id, s.c.full_name, s.c.role, s.c.is_active, s.c.created_at, u.c.email)
+                                  .outerjoin(u, u.c.id == s.c.id).order_by(s.c.full_name))
+        return [dict(r._mapping) for r in rows]
+
+    def add(self, member: StaffMember, created_by: UUID) -> None:
+        self._conn.execute(insert(t.staff).values(id=member.id, full_name=member.full_name, role=member.role.value,
+                                                  is_active=member.is_active, created_by=created_by,
+                                                  updated_by=created_by))
+
+    def update(self, staff_id: UUID, values: dict, updated_by: UUID) -> None:
+        values = {k: v.value if isinstance(v, StaffRole) else v for k, v in values.items()}
+        self._conn.execute(update(t.staff).where(t.staff.c.id == staff_id).values(**values, updated_by=updated_by))
+
 
 class SqlSettingsRepository:
     def __init__(self, conn: Connection) -> None:
@@ -308,6 +323,16 @@ class SqlSettingsRepository:
     def auto_release_minutes(self) -> int:
         value = self._conn.execute(select(t.restaurant_settings.c.auto_release_minutes).limit(1)).scalar()
         return 5 if value is None else value
+
+    def get(self) -> dict:
+        s = t.restaurant_settings
+        row = self._conn.execute(select(s.c.name, s.c.auto_release_minutes, s.c.tip_options).limit(1)).one()
+        return dict(row._mapping)
+
+    def update(self, values: dict, staff_id: UUID) -> None:
+        s = t.restaurant_settings
+        first = select(s.c.id).limit(1).scalar_subquery()
+        self._conn.execute(update(s).where(s.c.id == first).values(**values, updated_by=staff_id))
 
 
 def _row_to_call(row: Row) -> ServiceCall:

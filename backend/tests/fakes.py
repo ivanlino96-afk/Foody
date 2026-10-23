@@ -189,6 +189,15 @@ class _Staff:
     def get(self, staff_id):
         return self._uow.state.staff.get(staff_id)
 
+    def list_all(self):
+        return [vars(m) for m in self._uow.state.staff.values()]
+
+    def add(self, member, created_by):
+        self._uow.state.staff[member.id] = member
+
+    def update(self, staff_id, values, updated_by):
+        self._uow.state.staff[staff_id] = dataclasses.replace(self._uow.state.staff[staff_id], **values)
+
 
 class _Settings:
     def __init__(self, uow: "InMemoryUnitOfWork") -> None:

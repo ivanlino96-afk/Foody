@@ -1,4 +1,4 @@
-const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? 'http://127.0.0.1:54321'
+import { SUPABASE_URL } from './supabase'
 
 export function photoUrl(path: string | null): string | null {
   if (!path) return null

@@ -1,4 +1,7 @@
-import { Route, Routes, useParams } from 'react-router'
+import { Navigate, Outlet, Route, Routes, useParams } from 'react-router'
+import { AuthProvider, useAuth } from '../features/auth/AuthContext'
+import { RequireRole, StaffLoading, homeFor } from '../features/auth/RequireRole'
+import { LoginView } from '../features/auth/views/LoginView'
 import { DinerProvider } from '../features/diner/DinerContext'
 import { DinerStatusGate } from '../features/diner/DinerStatusGate'
 import { SplashGate } from '../features/diner/SplashGate'
@@ -6,6 +9,8 @@ import { AccountView } from '../features/diner/views/AccountView'
 import { CartView } from '../features/diner/views/CartView'
 import { DishDetailView } from '../features/diner/views/DishDetailView'
 import { MenuView } from '../features/diner/views/MenuView'
+import type { StaffRole } from '../domain/staffTypes'
+import { StaffHeader } from '../shared/ui/StaffHeader'
 
 function DinerRoot() {
   const { token = '' } = useParams()
@@ -25,6 +30,24 @@ function DinerRoot() {
   )
 }
 
+function StaffRoot() {
+  return <AuthProvider><Outlet /></AuthProvider>
+}
+
+function StaffIndex() {
+  const { status, staff } = useAuth()
+  if (status === 'loading') return <StaffLoading />
+  return <Navigate to={staff ? homeFor(staff.role) : '/login'} replace />
+}
+
+function AreaPlaceholder({ area }: { area: StaffRole }) {
+  return (
+    <div className="min-h-dvh bg-avena">
+      <StaffHeader area={area} />
+    </div>
+  )
+}
+
 function Home() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-2 bg-bosque px-8 text-center text-white">
@@ -38,6 +61,13 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/mesa/:token/*" element={<DinerRoot />} />
+      <Route element={<StaffRoot />}>
+        <Route path="/login" element={<LoginView />} />
+        <Route path="/personal" element={<StaffIndex />} />
+        <Route path="/cocina/*" element={<RequireRole roles={['kitchen']}><AreaPlaceholder area="kitchen" /></RequireRole>} />
+        <Route path="/mesero/*" element={<RequireRole roles={['waiter']}><AreaPlaceholder area="waiter" /></RequireRole>} />
+        <Route path="/admin/*" element={<RequireRole roles={['admin']}><AreaPlaceholder area="admin" /></RequireRole>} />
+      </Route>
       <Route path="*" element={<Home />} />
     </Routes>
   )

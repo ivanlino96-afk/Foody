@@ -3,7 +3,7 @@ from uuid import UUID
 
 import jwt
 
-from app.domain.errors import Forbidden
+from app.domain.errors import InvalidToken
 
 ASYMMETRIC_ALGORITHMS = ["RS256", "ES256", "EdDSA"]
 
@@ -24,11 +24,11 @@ class JwtVerifier:
             algorithm = jwt.get_unverified_header(token).get("alg")
             if algorithm == "HS256":
                 if not self._secret:
-                    raise Forbidden("Token no válido")
+                    raise InvalidToken()
                 claims = jwt.decode(token, self._secret, algorithms=["HS256"], audience="authenticated")
             else:
                 key = self._jwks.get_signing_key_from_jwt(token).key
                 claims = jwt.decode(token, key, algorithms=ASYMMETRIC_ALGORITHMS, audience="authenticated")
             return UUID(claims["sub"])
         except (jwt.PyJWTError, KeyError, ValueError) as exc:
-            raise Forbidden("Token no válido o vencido") from exc
+            raise InvalidToken() from exc

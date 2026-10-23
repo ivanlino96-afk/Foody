@@ -26,11 +26,18 @@ def test_missing_token_is_401(guarded):
     assert r.json()["code"] == "unauthorized"
 
 
-def test_expired_token_is_403(guarded, waiter):
+def test_expired_token_is_401(guarded, waiter):
+    # 401 tells the app to refresh or sign in again; 403 is kept for "this account may not do this".
     r = guarded.get("/test/waiter-only",
                     headers={"Authorization": f"Bearer {make_token(waiter.id, timedelta(minutes=-5))}"})
-    assert r.status_code == 403
-    assert r.json()["code"] == "forbidden"
+    assert r.status_code == 401
+    assert r.json()["code"] == "unauthorized"
+
+
+def test_garbage_token_is_401(guarded):
+    r = guarded.get("/test/waiter-only", headers={"Authorization": "Bearer not-a-jwt"})
+    assert r.status_code == 401
+    assert r.json()["code"] == "unauthorized"
 
 
 def test_waiter_route_rejects_kitchen_role(guarded, kitchen):

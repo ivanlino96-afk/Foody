@@ -13,9 +13,11 @@ from app.presentation.schemas import KitchenStatusIn, OrderStatusOut
 
 router = APIRouter(prefix="/kitchen", tags=["kitchen"])
 kitchen_only = require_roles(StaffRole.KITCHEN)
+# Waiters read the queue to see which orders are ready to take to the table.
+kitchen_or_waiter = require_roles(StaffRole.KITCHEN, StaffRole.WAITER)
 
 
-@router.get("/orders", dependencies=[Depends(kitchen_only)])
+@router.get("/orders", dependencies=[Depends(kitchen_or_waiter)])
 def list_orders(status: Literal["active"] = "active", uow: UnitOfWork = Depends(get_uow)) -> list[KitchenOrderView]:
     return get_active_orders(uow)
 

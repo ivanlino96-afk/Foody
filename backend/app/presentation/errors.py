@@ -9,6 +9,7 @@ from app.domain.errors import (
     DuplicateEmail,
     Forbidden,
     InvalidCustomization,
+    InvalidToken,
     InvalidTransition,
     ItemUnavailable,
     NotFound,
@@ -49,6 +50,7 @@ class ServiceUnavailable(DomainError):
 
 STATUS_BY_ERROR: dict[type[DomainError], int] = {
     Unauthorized: 401,
+    InvalidToken: 401,
     RateLimited: 429,
     Conflict: 409,
     DuplicateEmail: 409,

@@ -52,6 +52,12 @@ class DuplicateEmail(DomainError):
     default_message = "Ya existe un usuario con ese correo"
 
 
+class InvalidToken(DomainError):
+    """The bearer token is missing its signature, malformed or expired: the client must refresh or sign in again."""
+    code = "unauthorized"
+    default_message = "Tu sesión venció; vuelve a entrar"
+
+
 class Forbidden(DomainError):
     code = "forbidden"
     default_message = "No tienes permiso para esta acción"

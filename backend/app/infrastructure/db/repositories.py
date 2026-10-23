@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import Connection, Row, func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from app.application.dto import MenuCategoryView, StaffMember
+from app.application.dto import AvailabilityBoardView, AvailabilityRow, MenuCategoryView, StaffMember
 from app.domain.entities import (
     DiningTable,
     Extra,
@@ -15,10 +15,20 @@ from app.domain.entities import (
     ItemIngredient,
     MenuItem,
     Order,
+    Payment,
+    ServiceCall,
     StatusChange,
     TableSession,
 )
-from app.domain.enums import OrderStatus, StaffRole, TableStatus
+from app.domain.enums import (
+    AvailabilityEntity,
+    OrderStatus,
+    PaymentMethod,
+    PaymentStatus,
+    ServiceCallType,
+    StaffRole,
+    TableStatus,
+)
 from app.domain.services.pricing import PricedExtra, PricedLine, RemovedIngredient
 from app.infrastructure.db import tables as t
 
@@ -30,7 +40,8 @@ def _row_to_table(row: Row) -> DiningTable:
 
 def _row_to_session(row: Row) -> TableSession:
     return TableSession(row.id, row.table_id, row.opened_by, row.opened_at, row.guests_count, row.subtotal_cents,
-                        row.cost_cents, row.tip_cents, row.paid_cents, row.closed_at)
+                        row.cost_cents, row.tip_cents, row.paid_cents, row.closed_at, row.bill_requested_at,
+                        row.paid_at)
 
 
 def _row_to_ingredient(row: Row) -> Ingredient:
@@ -98,7 +109,8 @@ class SqlSessionRepository:
     def _values(self, s: TableSession) -> dict:
         return {"table_id": s.table_id, "opened_by": s.opened_by, "opened_at": s.opened_at,
                 "guests_count": s.guests_count, "subtotal_cents": s.subtotal_cents, "cost_cents": s.cost_cents,
-                "tip_cents": s.tip_cents, "paid_cents": s.paid_cents, "closed_at": s.closed_at}
+                "tip_cents": s.tip_cents, "paid_cents": s.paid_cents, "closed_at": s.closed_at,
+                "bill_requested_at": s.bill_requested_at, "paid_at": s.paid_at}
 
     def add(self, session: TableSession) -> None:
         self._conn.execute(insert(t.table_sessions).values(id=session.id, **self._values(session)))
@@ -116,8 +128,14 @@ class SqlMenuRepository:
         return {item.id: item for item in self._load(list(ids))}
 
     def _load(self, ids: list[UUID] | None) -> list[MenuItem]:
-        mi, mii, ing, mie, ex = t.menu_items, t.menu_item_ingredients, t.ingredients, t.menu_item_extras, t.extras
-        stmt = select(mi).order_by(mi.c.sort_order, mi.c.name)
+        """Deleted ingredients and extras come back unavailable (an old cart gets item_unavailable) and are
+        dropped from the diner menu; items of a hidden or deleted category come back inactive."""
+        mi, mii, ing, mie, ex, cat = (t.menu_items, t.menu_item_ingredients, t.ingredients, t.menu_item_extras,
+                                      t.extras, t.categories)
+        category_visible = (cat.c.is_active & cat.c.deleted_at.is_(None)).label("category_visible")
+        stmt = (select(mi, category_visible).join(cat, cat.c.id == mi.c.category_id)
+                .order_by(mi.c.sort_order, mi.c.name))
+        drop_deleted = ids is None
         if ids is not None:
             if not ids:
                 return []
@@ -128,22 +146,29 @@ class SqlMenuRepository:
             return []
         ingredients: dict[UUID, list[ItemIngredient]] = defaultdict(list)
         for r in self._conn.execute(
-                select(mii.c.menu_item_id, mii.c.is_removable, ing.c.id, ing.c.name, ing.c.is_available)
+                select(mii.c.menu_item_id, mii.c.is_removable, ing.c.id, ing.c.name, ing.c.is_available,
+                       ing.c.deleted_at)
                 .join(ing, ing.c.id == mii.c.ingredient_id).where(mii.c.menu_item_id.in_(item_ids))
                 .order_by(mii.c.sort_order, ing.c.name)):
-            ingredients[r.menu_item_id].append(ItemIngredient(_row_to_ingredient(r), r.is_removable))
+            if r.deleted_at is not None and drop_deleted and r.is_removable:
+                continue
+            ingredient = Ingredient(r.id, r.name, r.is_available and r.deleted_at is None)
+            ingredients[r.menu_item_id].append(ItemIngredient(ingredient, r.is_removable))
         extra_ing = ing.alias("extra_ingredient")
         extras: dict[UUID, list[ItemExtra]] = defaultdict(list)
         for r in self._conn.execute(
                 select(mie.c.menu_item_id, mie.c.max_quantity, ex.c.id, ex.c.name, ex.c.price_cents, ex.c.cost_cents,
-                       ex.c.is_available, extra_ing.c.id.label("ing_id"), extra_ing.c.name.label("ing_name"),
+                       ex.c.is_available, ex.c.deleted_at, extra_ing.c.id.label("ing_id"), extra_ing.c.name.label("ing_name"),
                        extra_ing.c.is_available.label("ing_available"))
                 .join(ex, ex.c.id == mie.c.extra_id).outerjoin(extra_ing, extra_ing.c.id == ex.c.ingredient_id)
                 .where(mie.c.menu_item_id.in_(item_ids)).order_by(mie.c.sort_order, ex.c.name)):
+            if r.deleted_at is not None and drop_deleted:
+                continue
             linked = Ingredient(r.ing_id, r.ing_name, r.ing_available) if r.ing_id else None
-            extra = Extra(r.id, r.name, r.price_cents, r.cost_cents, r.is_available, linked)
+            extra = Extra(r.id, r.name, r.price_cents, r.cost_cents, r.is_available and r.deleted_at is None, linked)
             extras[r.menu_item_id].append(ItemExtra(extra, r.max_quantity))
-        return [MenuItem(r.id, r.category_id, r.name, r.price_cents, r.cost_cents, r.is_available, r.is_active,
+        return [MenuItem(r.id, r.category_id, r.name, r.price_cents, r.cost_cents, r.is_available,
+                         r.is_active and r.category_visible,
                          r.deleted_at is not None, tuple(ingredients[r.id]), tuple(extras[r.id]), r.description,
                          r.photo_path, r.prep_minutes, tuple(r.tags or ())) for r in rows]
 
@@ -283,3 +308,95 @@ class SqlSettingsRepository:
     def auto_release_minutes(self) -> int:
         value = self._conn.execute(select(t.restaurant_settings.c.auto_release_minutes).limit(1)).scalar()
         return 5 if value is None else value
+
+
+def _row_to_call(row: Row) -> ServiceCall:
+    return ServiceCall(row.id, row.session_id, row.table_id, ServiceCallType(row.type), row.created_at,
+                       row.attended_at, row.attended_by)
+
+
+class SqlServiceCallRepository:
+    def __init__(self, conn: Connection) -> None:
+        self._conn = conn
+
+    def add(self, call: ServiceCall) -> None:
+        self._conn.execute(insert(t.service_calls).values(
+            id=call.id, session_id=call.session_id, table_id=call.table_id, type=call.type.value,
+            created_at=call.created_at, attended_at=call.attended_at, attended_by=call.attended_by))
+
+    def get_for_update(self, call_id: UUID) -> ServiceCall | None:
+        row = self._conn.execute(select(t.service_calls).where(t.service_calls.c.id == call_id)
+                                 .with_for_update()).first()
+        return _row_to_call(row) if row else None
+
+    def save(self, call: ServiceCall) -> None:
+        self._conn.execute(update(t.service_calls).where(t.service_calls.c.id == call.id).values(
+            attended_at=call.attended_at, attended_by=call.attended_by))
+
+    def pending_for_session(self, session_id: UUID, call_type: ServiceCallType) -> ServiceCall | None:
+        sc = t.service_calls
+        row = self._conn.execute(select(sc).where(sc.c.session_id == session_id, sc.c.type == call_type.value,
+                                                  sc.c.attended_at.is_(None)).limit(1)).first()
+        return _row_to_call(row) if row else None
+
+    def list_pending(self) -> list[ServiceCall]:
+        sc = t.service_calls
+        stmt = select(sc).where(sc.c.attended_at.is_(None)).order_by(sc.c.created_at)
+        return [_row_to_call(r) for r in self._conn.execute(stmt)]
+
+
+class SqlPaymentRepository:
+    def __init__(self, conn: Connection) -> None:
+        self._conn = conn
+
+    def add(self, payment: Payment) -> None:
+        self._conn.execute(insert(t.payments).values(
+            id=payment.id, session_id=payment.session_id, method=payment.method.value, status=payment.status.value,
+            amount_cents=payment.amount_cents, tip_cents=payment.tip_cents, received_by=payment.received_by,
+            paid_at=payment.paid_at, created_at=payment.created_at, created_by=payment.received_by))
+
+    def list_by_session(self, session_id: UUID) -> list[Payment]:
+        p = t.payments
+        rows = self._conn.execute(select(p).where(p.c.session_id == session_id).order_by(p.c.created_at))
+        return [Payment(r.id, r.session_id, PaymentMethod(r.method), PaymentStatus(r.status), r.amount_cents,
+                        r.tip_cents, r.received_by, r.paid_at, r.created_at) for r in rows]
+
+
+_AVAILABILITY_TABLES = {
+    AvailabilityEntity.MENU_ITEM: t.menu_items,
+    AvailabilityEntity.INGREDIENT: t.ingredients,
+    AvailabilityEntity.EXTRA: t.extras,
+}
+
+
+class SqlAvailabilityRepository:
+    def __init__(self, conn: Connection) -> None:
+        self._conn = conn
+
+    def set_available(self, entity: AvailabilityEntity, entity_id: UUID, is_available: bool,
+                      staff_id: UUID) -> bool:
+        table = _AVAILABILITY_TABLES[entity]
+        result = self._conn.execute(update(table).where(table.c.id == entity_id, table.c.deleted_at.is_(None))
+                                    .values(is_available=is_available, updated_by=staff_id))
+        return result.rowcount == 1
+
+    def add_log(self, entity: AvailabilityEntity, entity_id: UUID, is_available: bool, staff_id: UUID,
+                at) -> None:
+        self._conn.execute(insert(t.availability_log).values(
+            entity_type=entity.value, entity_id=entity_id, is_available=is_available, changed_by=staff_id,
+            changed_at=at, created_by=staff_id))
+
+    def list_board(self) -> AvailabilityBoardView:
+        mi, ing, ex, mii, mie = t.menu_items, t.ingredients, t.extras, t.menu_item_ingredients, t.menu_item_extras
+        live_item = mi.c.deleted_at.is_(None)
+        items = [AvailabilityRow(r.id, r.name, r.is_available) for r in self._conn.execute(
+            select(mi.c.id, mi.c.name, mi.c.is_available).where(live_item).order_by(mi.c.name))]
+
+        def rows(table, link, link_col):
+            used = (select(func.count()).select_from(link).join(mi, mi.c.id == link.c.menu_item_id)
+                    .where(link_col == table.c.id, live_item).scalar_subquery())
+            stmt = (select(table.c.id, table.c.name, table.c.is_available, used.label("used_in"))
+                    .where(table.c.deleted_at.is_(None)).order_by(table.c.name))
+            return [AvailabilityRow(r.id, r.name, r.is_available, r.used_in) for r in self._conn.execute(stmt)]
+
+        return AvailabilityBoardView(items, rows(ing, mii, mii.c.ingredient_id), rows(ex, mie, mie.c.extra_id))

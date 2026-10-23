@@ -3,9 +3,12 @@ from typing import Self
 from sqlalchemy import Connection, Engine
 
 from app.infrastructure.db.repositories import (
+    SqlAvailabilityRepository,
     SqlHistoryRepository,
     SqlMenuRepository,
     SqlOrderRepository,
+    SqlPaymentRepository,
+    SqlServiceCallRepository,
     SqlSessionRepository,
     SqlSettingsRepository,
     SqlStaffRepository,
@@ -29,6 +32,9 @@ class SqlUnitOfWork:
         self.history = SqlHistoryRepository(self._conn)
         self.staff = SqlStaffRepository(self._conn)
         self.settings = SqlSettingsRepository(self._conn)
+        self.service_calls = SqlServiceCallRepository(self._conn)
+        self.payments = SqlPaymentRepository(self._conn)
+        self.availability = SqlAvailabilityRepository(self._conn)
         return self
 
     def __exit__(self, *exc: object) -> None:
